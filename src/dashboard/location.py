@@ -1,3 +1,5 @@
+from datetime import datetime, date, timedelta
+from itertools import islice
 from typing import Tuple
 
 import math
@@ -9,9 +11,6 @@ def merc(lat: float, lon: float) -> Tuple[float, float]:
     scale = x/lon
     y = 180.0/math.pi * math.log(math.tan(math.pi/4.0 + lat * (math.pi/180.0)/2.0)) * scale
     return (x, y)
-
-
-from datetime import datetime, date
 
 import pandas as pd # type: ignore
 
@@ -39,8 +38,6 @@ def plot(day: str, df):
     #     mx.append(mmx)
     #     my.append(mmy)
 
-    # print(list(df[['lat', 'lon']].iterrows())[0][1].lat)
-    # return
     df = pd.DataFrame(
         (merc(lat, lon) for _, (lat, lon) in df[['lat', 'lon']].iterrows()),
         columns=['mlon', 'mlat'],
@@ -57,8 +54,8 @@ def plot(day: str, df):
     x_range = min(df['mlon']) - 100, max(df['mlon']) + 100
     y_range = min(df['mlat']) - 100, max(df['mlat']) + 100
 
-    print(x_range, y_range)
-    print(max(df['mlon']), min(df['mlon']))
+    # print(x_range, y_range)
+    # print(max(df['mlon']), min(df['mlon']))
 
     # TODO determine range from data?
     p = figure(
@@ -86,31 +83,59 @@ def plot(day: str, df):
 
 
 
-from itertools import islice
-def plot_all():
+
+# set limit to finite value to speed up
+def plot_all(limit=None):
     from bokeh.io import export_png, export_svgs, save
     # todo add min/max date?
     # todo multiple threads?
-    limit = 10000 # set to finite value to speed up
 
-    locs = all_locs()
-    df = pd.DataFrame(
-        islice((l._asdict() for l in locs), 0, limit),
-    ).set_index('dt')
+    # todo extract this mock data into HPI
+    # use some python library to generate it
+    real = True
+    if real:
+        locs = all_locs()
+        idf = pd.DataFrame(islice((l._asdict() for l in locs), 0, limit))
+    else:
+        idf = pd.DataFrame([{
+            'dt': datetime.strptime('20200101', '%Y%m%d') + timedelta(minutes=30 * x),
+            'lat': max((0.01 * x) % 90, 0.1),
+            'lon': max((0.01 * x) % 90, 0.1),
+        } for x in range(1, 1000)])
 
-    for day, grp in df.groupby(lambda x: x.date()):
-        # todo return plot instead?
+    df = idf.set_index('dt')
 
+    def process(day_and_grp):
+        day, grp = day_and_grp
         # todo uhoh. chromedriver might die?
         days = day.strftime('%Y%m%d')
         p = plot(day=days, df=grp)
 
+        fname = f'output/{days}.png'
+        print(f'saving {fname}')
         if True:
-            export_png (p, filename=f'output/{days}.png')
+            export_png (p, filename=fname)
         else:
             # hmm, this doesn't produce the background (map). but faster to dump?
             p.output_backend = 'svg'
-            export_svgs(p, filename=f'output/{days}.svg')
+            export_svgs(p, filename=fname)
+
+    inputs = [(day, grp) for day, grp in df.groupby(lambda x: x.date())]
+
+    # todo ugh. pretty sure it's resulting in race conditions... (probably because of shared chromedriver?) need to test it properly
+    from concurrent.futures import ThreadPoolExecutor as Pool
+    # todo and process pool executor just gets stuck?
+
+
+    parallel = False
+
+    if parallel:
+        with Pool() as pool:
+            for _ in pool.map(process, inputs):
+                pass
+    else:
+        for _ in map(process, inputs):
+            pass
 
     # [(key, grp) for key, grp in df[:10].set_index('dt')
     # for day in [
