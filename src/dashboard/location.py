@@ -6,6 +6,11 @@ import math
 # https://wiki.openstreetmap.org/wiki/Mercator#Python_implementation
 # ugh https://gis.stackexchange.com/a/156046 this one works fine??
 def merc(lat: float, lon: float) -> Tuple[float, float]:
+    eps = 0.000001
+    if abs(lon) < eps:
+        # TODO meh. at least take sign into the account...
+        lon = eps
+
     r_major = 6378137.000
     x = r_major * math.radians(lon)
     scale = x/lon
@@ -25,6 +30,7 @@ from bokeh.plotting import figure, show # type: ignore
 # https://stackoverflow.com/questions/50680820/bokeh-openstreetmap-tile-not-visible-in-all-browsers
 from bokeh.tile_providers import OSM, get_provider # type: ignore
 
+# TODO wonder if it's possible to cache the tiles?
 tile_provider = get_provider(OSM)
 
 
@@ -105,6 +111,7 @@ def plot_all(limit=None):
 
     df = idf.set_index('dt')
 
+    # todo make defensive, collect errors
     def process(day_and_grp):
         day, grp = day_and_grp
         # todo uhoh. chromedriver might die?
