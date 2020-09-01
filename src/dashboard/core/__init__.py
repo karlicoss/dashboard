@@ -1,6 +1,9 @@
+# todo move these to bokeh helpers specifically?
+
 def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs):
     import hvplot # type: ignore
     import holoviews as hv # type: ignore
+    from bokeh.models import Label # type: ignore
 
     columns = df.columns
     # TODO might be useful to include/exclude specific cols (e.g. datetime) while keeping them in annotations
@@ -29,6 +32,9 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
 
 
     if regression:
+        # todo this would be need for plotly as well?
+        import statsmodels.formula.api as smf # type: ignore
+
         # GridMatrix is just a dict. nice!
         for k, plot in sm.items():
             xx, yy = k
@@ -38,14 +44,47 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
             # TODO definitely test nan behaviour for scatter_matrix...
 
             dd = plot.data[[xx, yy]].dropna() # otherwise from_scatter fails
+
+            res = smf.ols(f"{yy} ~ {xx}", data=dd).fit()
+            intercept = res.params['Intercept']
+            slope = res.params[xx]
+            r2 = res.rsquared
+
+            # todo ugh. why is it so hard... I wonder if holoviews only makes it harder..
+            # lbl = Label(x=70, y=70, x_units='screen', text='Some Stuff', render_mode='css',
+            #     border_line_color='black', border_line_alpha=1.0,
+            #     background_fill_color='white', background_fill_alpha=1.0)
+
+            ## TODO crap. is it really the best way to figure out relative position??
+            relx = 0.01
+            rely = 0.1
+
+            # todo highlight high enough R2?
+            minx, maxx = min(dd[xx]), max(dd[xx])
+            miny, maxy = min(dd[yy]), max(dd[yy])
+            # todo font size dependent on width?? ugh.
+            text = hv.Text(
+                minx + (maxx - minx) * relx,
+                miny + (maxy - miny) * rely,
+                f"R2 = {r2:.4f}\n{yy} ~ {slope:.3f} {xx}",
+                halign='left',
+            )
+            ##
+
             # todo need to add various regression properties, like intercept, etc
             # TODO hopefuly this overlays correctly?? not sure about nans, again
-            sm[k] = plot * hv.Slope.from_scatter(hv.Scatter((dd[xx], dd[yy]))).opts(color='red')
+            sl = hv.Slope.from_scatter(hv.Scatter((dd[xx], dd[yy]))).opts(color='red')
+            # just a sanity check.. not sure which one I should use?
+            # sl2 = hv.Slope(slope, intercept).opts(color='green')
+            # TODO ugh. title doesn't work??
+            sm[k] = plot * sl * text
+
             # wow! * (same plot) vs + (different plots) is pretty clever!
             # also I like how multiplication doesn't commute so the 'first' plot wins the layout parameters
 
     # TODO dynamic resizing would be nice
     return sm
+# todo plotly/sns also plotted some sort of confidence intervals? not sure if they are useful
 
 
 def _scatter_matrix_demo(**kwargs):
@@ -54,6 +93,7 @@ def _scatter_matrix_demo(**kwargs):
     # dfs = data_frames([column('A', dtype=int), column('B', dtype=float)])
     # for _ in range(10):
     #     print(dfs.example())
+    #
 
     import numpy as np # type: ignore
     import pandas as pd # type: ignore
