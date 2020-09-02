@@ -1,5 +1,3 @@
-# todo move these to bokeh helpers specifically?
-
 def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs):
     import hvplot # type: ignore
     import holoviews as hv # type: ignore
@@ -115,3 +113,17 @@ def _scatter_matrix_demo(**kwargs):
     # TODO annotate with what's expected?
 
     return scatter_matrix(df, **kwargs)
+
+
+# todo better name? also have similar function for plotly
+def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwargs):
+    from bokeh.models import ColumnDataSource as CDS # type: ignore
+    if legend_label is None:
+        legend_label = y
+    plots = []
+    plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
+    for period in avgs:
+        dfa = df[[y]].rolling(period).mean()
+        # todo different style by default? thicker line? not sure..
+        plots.append(plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs))
+    return plots
