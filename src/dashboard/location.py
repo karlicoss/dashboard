@@ -21,7 +21,7 @@ import pandas as pd # type: ignore
 
 from my.location import iter_locations
 
-from .data import all_locs
+from .data import locations_dataframe
 
 # todo might need to lru_cache so reloading works
 
@@ -100,16 +100,15 @@ def plot_all(limit=None):
     # use some python library to generate it
     real = True
     if real:
-        locs = all_locs()
-        idf = pd.DataFrame(islice((l._asdict() for l in locs), 0, limit))
+        df = locations_dataframe()
     else:
+        # todo move to hpi or something
         idf = pd.DataFrame([{
             'dt': datetime.strptime('20200101', '%Y%m%d') + timedelta(minutes=30 * x),
             'lat': max((0.01 * x) % 90, 0.1),
             'lon': max((0.01 * x) % 90, 0.1),
         } for x in range(1, 1000)])
-
-    df = idf.set_index('dt')
+        df = idf.set_index('dt')
 
     # todo make defensive, collect errors
     def process(day_and_grp):
@@ -154,3 +153,11 @@ def plot_all(limit=None):
     #     plot(day)
     # date_ = datetime.strptime(day, '%Y%m%d').date()
     # points = [l for l in locs if l.dt.date() == date_]
+
+
+# pip3 install --user geoviews
+# also see https://scitools.org.uk/cartopy/docs/latest/installing.html#requirements
+# in my case had to
+# - apt install proj-bin proj-data.
+#   Possibly enough to install libproj15 and libproj-dev?
+# - apt install libgeos-dev
