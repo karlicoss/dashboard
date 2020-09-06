@@ -9,6 +9,7 @@ def plot_blood(df):
     # I guess, need a helper after all to handle it better
 
     # todo add 'normal' ranges somehow..
+    # I guess they would/could also depend on the data providers?
     # perhaps via dataframe attributes as well? or datatypes (not sure how?)
 
     # todo display source on a tooltop

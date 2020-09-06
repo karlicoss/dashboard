@@ -107,3 +107,73 @@ def plot_sleep_intervals(df):
     p.legend.click_policy = 'hide'
 
     return p
+
+
+def plot_sleep_bedtime(df):
+    df = _sleep_df(df)
+    dates = df.index
+
+    p = date_figure()
+    [g, g7, g30] = rolling(plot=p, x='date', y='bed_time', df=df, color='green' )
+    g7 .glyph.line_dash = 'dashed'
+    g30.glyph.line_width = 2
+    add_daysoff(p, dates=dates)
+
+    # todo how to make this a default?
+    p.legend.click_policy = 'hide'
+
+    return p
+
+
+def plot_all_sleep(df):
+    # TODO meh
+    dates = _sleep_df(df).index
+
+    from bokeh.layouts import gridplot
+    from .core.bokeh import date_slider
+
+    p1 = plot_sleep_bedtime(df=df)
+    p1.legend.orientation = "horizontal"
+    p1.legend.location = "top_left"
+    # todo ok, this is nice.. maybe make it the default somehow?
+
+    # breakpoint()
+
+    p2 = plot_sleep(df=df)
+    p2.legend.orientation = "horizontal"
+    p2.legend.location = "top_left"
+    p2.x_range = p1.x_range
+
+    # TODO filter non-nan values??
+    p3 = plot_sleep_hrv(df=df)
+    p3.legend.orientation = "horizontal"
+    p3.legend.location = "top_left"
+    p3.x_range = p1.x_range
+
+
+    p4 = plot_sleep_intervals(df=df)
+    # todo toggle between 'absolute/relative' length
+    p4.legend.orientation = "horizontal"
+    p4.legend.location = "top_left"
+    p4.x_range = p1.x_range
+
+
+    # todo embedding bokeh server is probably not too bad
+    # @gsteele13 show with notebook handles is for one-way Python->JS updates only. If you want to have bi-directional updates back to Python, you would need to embed a Bokeh server app in the notebook.
+    DS = date_slider
+
+    # todo set default slider range to start of year?
+    return gridplot([
+        [DS(p1, dates=dates)],
+        [p1],
+        [p2],
+        [p3],
+        [p4],
+    ], sizing_mode='stretch_width')
+    # todo scatter: maybe only display few latest points? not sure how easy it is to achieve?
+
+    # TODO more frequent date ticks?
+    # todo interactive scaling??
+    # TODO not sure if holiday 'background' is that visually useful? perhaps different colours/extra highlight would be better after all. or both?
+    # or just divide by holiday vs non-holiday and dynamically redraw sliding averages?
+    # yeah.. visually figuring out the holiday-non holiday difference is impossible
