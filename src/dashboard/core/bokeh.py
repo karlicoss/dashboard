@@ -214,51 +214,6 @@ def date_slider(p, *, dates):
     return ds
 
 
-from typing import Union, Sequence, List
-
-
-Column = str
-Groups = Sequence[Union[Sequence[Column], Column]]
-
-
-def set_group_hints(df, groups: Groups):
-    # todo set default to empty/none?
-    df.attrs['group_hints'] = groups
-    return df
-
-
-def read_group_hints(df):
-    hints = df.attrs['group_hints']
-
-    cols = list(df.columns)
-
-    groups: List[List[Column]] = []
-
-    # TODO warn if not presetn??
-
-    for x in hints:
-        gr: List[Column]
-        if isinstance(x, Column):
-            gr = [x]
-        else:
-            gr = list(x)
-        gg: List[Column] = []
-        for f in gr:
-            if f not in cols:
-                # TODO this should be displayed separately as 'errors'
-                logging.warning('Unexpected column: %s', f)
-            else:
-                cols.remove(f)
-                gg.append(f)
-        groups.append(gg)
-
-    if len(cols) == 0:
-        logging.warning('Unexpected columns: %s', cols)
-        groups.append(cols)
-
-    return groups
-
-
 def plot_multiple(df, *, columns, **kwargs):
     # todo autodiscover columns somehow?
     # basically all except dates?
@@ -269,7 +224,10 @@ def plot_multiple(df, *, columns, **kwargs):
     # todo make configurable
     from bokeh.palettes import Dark2_5 as palette # type: ignore
 
+    from .pandas import read_group_hints, read_range_hints
     groups = read_group_hints(df)
+
+    range_hints = read_range_hints(df)
 
     # todo think of a better name?..
     x_range = None
@@ -280,7 +238,6 @@ def plot_multiple(df, *, columns, **kwargs):
     plots = []
     for grp in groups:
         # todo add source to annotation?
-        # todo add normal ranges
         p = date_figure(x_range=x_range, **kwargs)
 
         # todo color rainbow??
@@ -291,6 +248,43 @@ def plot_multiple(df, *, columns, **kwargs):
             # TODO rely on dt index? it can be non-unique so it should be fine...
             p.scatter(x='dt', y=f, source=CDS(data=fdf), color=color, legend_label=f)
             p.line   (x='dt', y=f, source=CDS(data=fdf), color=color, legend_label=f)
+
+            # TODO axis labels
+            
+            # hmm it actually uses glucose level as an example
+            # https://docs.bokeh.org/en/latest/docs/user_guide/annotations.html#box-annotations
+
+            # TODO from bokeh.sampledata.glucose import data -- could use for demo/testing
+            rhs = range_hints.get(f, [])
+            # TODO if no color, just vary color + ???
+            for rh in rhs:
+                # right. annotation works, but wasn't sure how to make it toggable
+                # from bokeh.models import BoxAnnotation # type: ignore
+                # normal = BoxAnnotation(bottom=rh.low, top=rh.high, fill_alpha=0.1, fill_color=rh.color)
+                # p.add_layout(normal)
+
+
+                extras = dict(color=None)
+                col = rh.color
+                if col is None:
+                    col = color
+                    if len(rhs) > 1:
+                        logging.warning("Multiple ranges for %s don't have colour, this will result in ranges overlapping: %s", f, rhs)
+                        # at least make the separators visible
+                        extras = dict(color='black', line_dash='dotted')
+
+                # todo hide by default?
+                # hmm, without left=, it plots at timestamp 0 =/
+                p.hbar(
+                    left =min(fdf['dt']),
+                    right=max(fdf['dt']),
+                    y=(rh.low + rh.high) / 2, height=rh.high - rh.low, # eh, this is awkward..
+                    fill_color=col,
+                    fill_alpha=0.1,
+                    legend_label=f'{f} ranges',
+                    **extras,
+                )
+
 
         p.title.text = str(grp)
         if x_range is None:

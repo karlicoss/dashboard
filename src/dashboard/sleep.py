@@ -125,6 +125,7 @@ def plot_sleep_bedtime(df):
     return p
 
 
+# todo woudl be nice to hightlight hovered datapoints??
 def plot_all_sleep(df):
     # TODO meh
     dates = _sleep_df(df).index
