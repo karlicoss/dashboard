@@ -1,3 +1,7 @@
+# input data for the dashboard
+# ideally here we keep this file as decoupled from the presentation as possible
+# so it's possible to use with any rendering framework, or even without rendering
+
 from functools import lru_cache
 from itertools import islice
 
