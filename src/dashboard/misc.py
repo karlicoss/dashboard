@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 from bokeh.models import ColumnDataSource as CDS # type: ignore
-
 import numpy as np # type: ignore
 import pandas as pd # type: ignore
 
@@ -45,22 +44,3 @@ def add_daysoff(plot, *, dates, bottom=0, top=80):
     )
 
 
-# todo not sure if it's really necessary
-def date_figure(**kwargs):
-    from bokeh.models import HoverTool # type: ignore
-    from bokeh.plotting import figure # type: ignore
-
-    # todo need other columns
-    hover = HoverTool(
-        tooltips=[
-            ( 'date',   '@date{%F}'            ),
-        ],
-        formatters={
-            '@date'        : 'datetime', # use 'datetime' formatter for '@date' field
-        },
-        # display a tooltip whenever the cursor is vertically in line with a glyph
-        mode='vline'
-    )
-    f = figure(x_axis_type='datetime', plot_width=2000, **kwargs)
-    f.add_tools(hover)
-    return f

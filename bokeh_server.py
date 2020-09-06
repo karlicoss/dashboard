@@ -100,3 +100,5 @@ elif __name__.startswith('bokeh'):
     bokeh_main_2()
 else:
     raise RuntimeError(__name__)
+
+# TODO visualize raw plots on a separate tab/tabs? basically discover all dataframes and infer what to render?

@@ -127,3 +127,24 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
         # todo different style by default? thicker line? not sure..
         plots.append(plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs))
     return plots
+
+
+# todo not sure if it's really necessary
+def date_figure(**kwargs):
+    from bokeh.models import HoverTool # type: ignore
+    from bokeh.plotting import figure # type: ignore
+
+    # todo need other columns
+    hover = HoverTool(
+        tooltips=[
+            ( 'date',   '@date{%F}'            ),
+        ],
+        formatters={
+            '@date'        : 'datetime', # use 'datetime' formatter for '@date' field
+        },
+        # display a tooltip whenever the cursor is vertically in line with a glyph
+        mode='vline'
+    )
+    f = figure(x_axis_type='datetime', plot_width=2000, **kwargs)
+    f.add_tools(hover)
+    return f
