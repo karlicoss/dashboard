@@ -20,7 +20,13 @@ def locations_dataframe(limit=None):
 
 
 # todo just use directly?
-@lru_cache
+@lru_cache()
 def emfit_dataframe():
     import my.emfit as emfit
     return emfit.dataframe()
+
+
+@lru_cache()
+def blood_dataframe():
+    import my.body.blood as B
+    return B.dataframe()

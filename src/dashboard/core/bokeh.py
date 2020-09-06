@@ -1,3 +1,11 @@
+from itertools import cycle
+import logging
+
+from bokeh.layouts import gridplot # type: ignore
+from bokeh.models import ColumnDataSource as CDS # type: ignore
+from bokeh.plotting import figure # type: ignore
+
+
 def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs):
     import hvplot # type: ignore
     import holoviews as hv # type: ignore
@@ -117,7 +125,6 @@ def _scatter_matrix_demo(**kwargs):
 
 # todo better name? also have similar function for plotly
 def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwargs):
-    from bokeh.models import ColumnDataSource as CDS # type: ignore
     if legend_label is None:
         legend_label = y
     plots = []
@@ -132,7 +139,6 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
 # todo not sure if it's really necessary
 def date_figure(**kwargs):
     from bokeh.models import HoverTool # type: ignore
-    from bokeh.plotting import figure # type: ignore
 
     # todo need other columns
     hover = HoverTool(
@@ -206,3 +212,92 @@ def date_slider(p, *, dates):
     # todo add some quick selectors, e.g. last month, last year, etc like plotly
     ds.js_on_change('value', update_js)
     return ds
+
+
+from typing import Union, Sequence, List
+
+
+Column = str
+Groups = Sequence[Union[Sequence[Column], Column]]
+
+
+def set_group_hints(df, groups: Groups):
+    # todo set default to empty/none?
+    df.attrs['group_hints'] = groups
+    return df
+
+
+def read_group_hints(df):
+    hints = df.attrs['group_hints']
+
+    cols = list(df.columns)
+
+    groups: List[List[Column]] = []
+
+    # TODO warn if not presetn??
+
+    for x in hints:
+        gr: List[Column]
+        if isinstance(x, Column):
+            gr = [x]
+        else:
+            gr = list(x)
+        gg: List[Column] = []
+        for f in gr:
+            if f not in cols:
+                # TODO this should be displayed separately as 'errors'
+                logging.warning('Unexpected column: %s', f)
+            else:
+                cols.remove(f)
+                gg.append(f)
+        groups.append(gg)
+
+    if len(cols) == 0:
+        logging.warning('Unexpected columns: %s', cols)
+        groups.append(cols)
+
+    return groups
+
+
+def plot_multiple(df, *, columns, **kwargs):
+    # todo autodiscover columns somehow?
+    # basically all except dates?
+
+    # todo use multiindex for groups? not sure if possible
+    # https://stackoverflow.com/questions/30791839/is-there-an-easy-way-to-group-columns-in-a-pandas-dataframe
+    
+    # todo make configurable
+    from bokeh.palettes import Dark2_5 as palette # type: ignore
+
+    groups = read_group_hints(df)
+
+    # todo think of a better name?..
+    x_range = None
+
+    # todo height??
+    # todo for grouping, could simply take soft hints?
+    # and if something is unknown, just warn and display on the plot
+    plots = []
+    for grp in groups:
+        # todo add source to annotation?
+        # todo add normal ranges
+        p = date_figure(x_range=x_range, **kwargs)
+
+        # todo color rainbow??
+        for f, color in zip(grp, cycle(palette)):
+            # todo make this behaviour adjustable?
+            fdf = df[df[f].notna()]
+
+            # TODO rely on dt index? it can be non-unique so it should be fine...
+            p.scatter(x='dt', y=f, source=CDS(data=fdf), color=color, legend_label=f)
+            p.line   (x='dt', y=f, source=CDS(data=fdf), color=color, legend_label=f)
+
+        p.title.text = str(grp)
+        if x_range is None:
+            x_range = p.x_range
+
+        p.legend.click_policy = 'hide'
+
+        plots.append(p)
+
+    return gridplot([[x] for x in plots])
