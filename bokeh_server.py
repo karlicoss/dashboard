@@ -67,20 +67,45 @@ def bokeh_main_2():
     f2 = figure()
     f2.circle([0,0,2],[4,-1,1])
 
-    l1 = layout([[f1]], sizing_mode='fixed')
-    l2 = layout([[f2]], sizing_mode='fixed')
-
     # todo need something more lazy?
     from dashboard.data import emfit_dataframe
     from dashboard.sleep import plot_sleep
     # TODO would be cool to display logs in the frontend and also currently evaluated function?
     # although pehaps it's easier to just always keep logs open?
-    sp = plot_sleep(df=emfit_dataframe())
+    # sp = plot_sleep(df=emfit_dataframe())
 
+
+    from bokeh.models.widgets import DateRangeSlider # type: ignore
+    from datetime import date
+    drs = DateRangeSlider(
+        title="Date Range: ",
+        start=date(2017, 1, 1),
+        end=date.today(),
+        value=(date(2017, 9, 7), date(2017, 10, 15)),
+        step=1,
+    )
+
+    def update(attr, old, new):
+        print(attr, old, new)
+
+    from bokeh.models import CustomJS # type: ignore
+    # todo see https://docs.bokeh.org/en/latest/docs/gallery/slider.html
+    update_js = CustomJS(
+        args=dict(drs=drs),
+        code='''
+console.log("HIIII");
+'''
+    )
+
+    drs.on_change('value', update)
+    drs.js_on_change('value', update_js)
+
+    l1 = layout([[f1, drs]], sizing_mode='fixed')
+    l2 = layout([[f2]], sizing_mode='fixed')
     tabs = Tabs(tabs=[
         Panel(child=l1            , title='This is Tab 1'  ),
         Panel(child=l2            , title='This is Tab 2'  ),
-        Panel(child=layout([[sp]]), title='Sleep dataframe'),
+        # Panel(child=layout([[sp]]), title='Sleep dataframe'),
     ])
 
     curdoc().add_root(tabs)
@@ -111,3 +136,4 @@ else:
     raise RuntimeError(__name__)
 
 # TODO visualize raw plots on a separate tab/tabs? basically discover all dataframes and infer what to render?
+# TODO https://github.com/bokeh/bokeh/blob/master/examples/app/sliders.py

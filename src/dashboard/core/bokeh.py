@@ -156,3 +156,53 @@ def date_figure(**kwargs):
 # vs
 # show(gridplot([[p1], [p2]]))
 # the latter works better because it aligns stuff properly
+#  otherwise impossible to notice js errors
+
+def J(code):
+    return f'''
+try {{
+    {code}
+}} catch (e) {{
+    alert("ERROR! " + String(e));
+}}
+'''
+
+
+# note.. hmm, sems that they have to share a layout in order for JS callbacks to work??
+def date_slider(p, *, dates):
+    from bokeh.models.widgets import DateRangeSlider # type: ignore
+    from datetime import date, timedelta
+    # FIXME how to determine date range??
+    # maybe they aren't computed before show()??
+    # p.x_range.on_change('start', lambda attr, old, new: print("Start", new))
+    # p.x_range.on_change('end', lambda attr, old, new: print("End", new))
+    sdate = min(dates)
+    edate = date.today() + timedelta(days=5)
+    ds = DateRangeSlider(
+        title="Date Range: ",
+        start=sdate,
+        end=edate,
+        value=(sdate, edate),
+        step=1,
+    )
+    from bokeh.models import CustomJS # type: ignore
+
+    # TODO hmm. so, js won't be able to call into python in Jupyter...
+    # see https://docs.bokeh.org/en/latest/docs/gallery/slider.html
+    update_js = CustomJS(
+        args=dict(ds=ds, xrange=p.x_range),
+        code=J('''
+    const [ll, rr] = ds.value;
+    // didn't work??
+    // xrange.set({"start": ll, "end": rr})
+    xrange.start = ll;
+    xrange.end   = rr;
+
+    // todo hmm, turned out it wasn't necessary??
+    // source.trigger('change');
+    '''
+    ))
+
+    # todo add some quick selectors, e.g. last month, last year, etc like plotly
+    ds.js_on_change('value', update_js)
+    return ds
