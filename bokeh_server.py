@@ -70,9 +70,18 @@ def bokeh_main_2():
     l1 = layout([[f1]], sizing_mode='fixed')
     l2 = layout([[f2]], sizing_mode='fixed')
 
-    tab1 = Panel(child=l1,title="This is Tab 1")
-    tab2 = Panel(child=l2,title="This is Tab 2")
-    tabs = Tabs(tabs=[tab1, tab2 ])
+    # todo need something more lazy?
+    from dashboard.data import emfit_dataframe
+    from dashboard.sleep import plot_sleep
+    # TODO would be cool to display logs in the frontend and also currently evaluated function?
+    # although pehaps it's easier to just always keep logs open?
+    sp = plot_sleep(df=emfit_dataframe())
+
+    tabs = Tabs(tabs=[
+        Panel(child=l1            , title='This is Tab 1'  ),
+        Panel(child=l2            , title='This is Tab 2'  ),
+        Panel(child=layout([[sp]]), title='Sleep dataframe'),
+    ])
 
     curdoc().add_root(tabs)
 

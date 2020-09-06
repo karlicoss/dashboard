@@ -148,3 +148,11 @@ def date_figure(**kwargs):
     f = figure(x_axis_type='datetime', plot_width=2000, **kwargs)
     f.add_tools(hover)
     return f
+
+
+# NOTE: this
+# show(p1)
+# show(p2)
+# vs
+# show(gridplot([[p1], [p2]]))
+# the latter works better because it aligns stuff properly

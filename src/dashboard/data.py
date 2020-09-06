@@ -17,3 +17,10 @@ def locations_dataframe(limit=None):
     idf = pd.DataFrame(islice((l._asdict() for l in locs), 0, limit))
     df = idf.set_index('dt')
     return df
+
+
+# todo just use directly?
+@lru_cache
+def emfit_dataframe():
+    import my.emfit as emfit
+    return emfit.dataframe()
