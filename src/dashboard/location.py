@@ -19,8 +19,6 @@ def merc(lat: float, lon: float) -> Tuple[float, float]:
 
 import pandas as pd # type: ignore
 
-from my.location import iter_locations
-
 from .data import locations_dataframe
 
 # todo might need to lru_cache so reloading works

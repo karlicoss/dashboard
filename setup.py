@@ -5,8 +5,9 @@ from setuptools import setup, find_packages # type: ignore
 
 
 def main():
-    pkgs = find_packages('src')
-    [pkg] = pkgs
+    pkgs = find_packages('src') # todo find_namespace_packages??
+    pkg = 'dashboard'
+    assert pkg in pkgs
     setup(
         name=pkg,
         use_scm_version={
@@ -17,7 +18,7 @@ def main():
 
         zip_safe=False,
 
-        packages=[pkg],
+        packages=pkgs,
         package_dir={'': 'src'},
         package_data={pkg: ['py.typed']},
 
@@ -31,7 +32,14 @@ def main():
         # Rest of the stuff -- classifiers, license, etc, I don't think it matters for PIP
         # it's just unnecessary duplication
 
-        install_requires=[],
+        install_requires=[
+            'pandas',
+            'bokeh',
+
+            # todo could be optional?
+            'hvplot',
+            'statsmodels',
+        ],
         extras_require={
             'testing': ['pytest'],
             'linting': ['pytest', 'mypy'],

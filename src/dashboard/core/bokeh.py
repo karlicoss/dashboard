@@ -1,9 +1,10 @@
 from itertools import cycle
 import logging
+from typing import Dict, Optional
 
-from bokeh.layouts import gridplot # type: ignore
-from bokeh.models import ColumnDataSource as CDS # type: ignore
-from bokeh.plotting import figure # type: ignore
+from bokeh.layouts import gridplot
+from bokeh.models import ColumnDataSource as CDS
+from bokeh.plotting import figure
 
 
 def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs):
@@ -273,7 +274,7 @@ def plot_multiple(df, *, columns, **kwargs):
                 # p.add_layout(normal)
 
 
-                extras = dict(color=None)
+                extras: Dict[str, Optional[str]] = dict(color=None)
                 col = rh.color
                 if col is None:
                     col = color

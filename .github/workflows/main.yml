@@ -17,8 +17,11 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ubuntu-latest, macos-latest] # TODO windows-latest??
-        python-version: [3.6, 3.7, 3.8]
+        platform: [ubuntu-latest]
+        python-version: [3.8]
+        # TODO add them back later
+        # platform: [ubuntu-latest, macos-latest] # TODO windows-latest??
+        # python-version: [3.6, 3.7, 3.8]
 
     runs-on: ${{ matrix.platform }}
 
