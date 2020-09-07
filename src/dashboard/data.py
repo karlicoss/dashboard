@@ -34,3 +34,14 @@ def emfit_dataframe():
 def blood_dataframe():
     import my.body.blood as B
     return B.dataframe()
+
+
+# TODO figure out when I need caching and when I don't. ideally, HPI can take care of it
+@lru_cache()
+def weight_dataframe():
+    # import my.body.weight as W
+    # return W.dataframe()
+
+    # TODO use an overlay instead. also document how to do this?
+    import my.private.weight as W # type: ignore
+    return W.get_dataframe()

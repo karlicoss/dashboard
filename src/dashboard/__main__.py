@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 from .tabs import tabs, Tab
 
@@ -15,8 +15,13 @@ def render_tab(*, tab: Tab, filename: Path):
     save(res)
 
 
-def run(to: Path) -> Iterable[Exception]:
+def run(to: Path, tab_name: Optional[str]=None) -> Iterable[Exception]:
     for tab in tabs():
+        if tab_name is not None and tab.name != tab_name:
+            logging.info('skipping %s', tab.name)
+            # todo error if no matches??
+            continue
+
         logging.info('rendering %s', tab.name)
         fname = to / (tab.name + '.html')
 
@@ -42,10 +47,11 @@ def main():
     from argparse import ArgumentParser as P
     p = P()
     p.add_argument('--to', type=Path, required=True)
+    p.add_argument('--tab', type=str, help='Plot specific tab (by default plots all)')
     args = p.parse_args()
 
     # todo pass function names to render? seems easier than tab names? or either?
-    errors = list(run(to=args.to))
+    errors = list(run(to=args.to, tab_name=args.tab))
     if len(errors) > 0:
         logging.error('Had %d errors while rendering', len(errors))
         for e in errors:

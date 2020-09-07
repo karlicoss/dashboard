@@ -37,6 +37,18 @@ def tabs() -> Iterable[Tab]:
         plotter=plot_sleep
     )
 
+
+    def plot_weight():
+        # todo wish I could do it in a lambda...
+        from .weight import plot_weight as P
+        return P()
+
+    yield Tab(
+        name='weight',
+        plotter=plot_weight,
+    )
+    # todo just allow yeld weight function?? autoname it
+
     error_test_tab = Tab(
         name='error_handling_test',
         plotter=lambda: "garbage",

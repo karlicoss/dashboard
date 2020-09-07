@@ -123,14 +123,23 @@ def _scatter_matrix_demo(**kwargs):
     return scatter_matrix(df, **kwargs)
 
 
+# TODO test behavious w.r.t. index with 'error'
 # todo better name? also have similar function for plotly
 def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwargs):
     if legend_label is None:
         legend_label = y
+    # todo assert datetime index? test it too
+    #
+    # todo warn if unsorted?
+    df = df.sort_index()
+
     plots = []
     plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
     for period in avgs:
-        dfa = df[[y]].rolling(period).mean()
+        dfy = df[[y]]
+        # TODO check that nans are only the 'error' columns
+        # otherwise fails. I guess errors aren't useful on avg plots anyway
+        dfa = dfy[df.index.notna()].rolling(period).mean()
         # todo different style by default? thicker line? not sure..
         plots.append(plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs))
     return plots
