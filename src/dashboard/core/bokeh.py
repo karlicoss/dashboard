@@ -3,7 +3,7 @@ import logging
 from typing import Dict, Optional
 
 from bokeh.layouts import gridplot
-from bokeh.models import ColumnDataSource as CDS
+from bokeh.models import ColumnDataSource as CDS, Text, Title
 from bokeh.plotting import figure
 
 
@@ -117,23 +117,61 @@ def _scatter_matrix_demo(**kwargs):
     return scatter_matrix(df, **kwargs)
 
 
-# TODO test behavious w.r.t. index with 'error'
 # todo better name? also have similar function for plotly
 def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwargs):
     if legend_label is None:
         legend_label = y
     # todo assert datetime index? test it too
     # todo although in theory it doens't have to be datetimes with the approprivate avgs??
-    #
+
+    nan_x = df.index.isna()
+    # FIXME display separately... but not sure where...
+    dfxe = df.loc[ nan_x]
+    df   = df.loc[~nan_x]
+    if len(dfxe) > 0:
+        # TODO think about a better location
+        # todo hmm, not sure if Title is the best thing to use? but Label/Text didn't work from the first attempt
+
+        # todo could even keep the 'value' erorrs and display below too.. but for now it's ok
+        # ok, if it respected newlines, would be perfect
+        # for now this is 'fine'...
+        for line in str(dfxe).splitlines():
+            # TODO FIXME it's truncated.. probably by pandas str conversion?
+            title = Title(text=line, align='left', text_color='red')
+            plot.add_layout(title, 'below')
+        # TODO use html maybe?
+        # https://stackoverflow.com/a/54132533/706389
+
     # todo warn if unsorted?
     df = df.sort_index()
+
+    nan_y = df[y].isnull() # todo vs isna??
+
+    dfye = df.loc[ nan_y]
+    df   = df.loc[~nan_y]
+    # filtering nans is necessary for rolling mean calculations
+    # I guess errors aren't useful on avg plots anyway
+
+    if len(dfye) > 0:
+        # todo hover (with date?) would be nice..
+        glyph = Text(
+            x=x,
+            y=max(df[y]) / 2, # TODO meh
+            text='error',
+            angle=3.14 / 2,
+            text_color='red'
+        )
+        plot.add_glyph(CDS(dfye), glyph)
+
+    # err_plot = plot.vbar(source=CDS(dfe), x=x, top=max(df[y]), width=0.9, color='red', alpha=0.5)
+   
+    # todo I guess just don't append it? a bit crap that can't be modified, but at least no issues..
+    # plots.append(err_plot)
 
     plots = []
     plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
     for period in avgs:
         dfy = df[[y]]
-        # TODO check that nans are only the 'error' columns
-        # otherwise fails. I guess errors aren't useful on avg plots anyway
         dfa = dfy[df.index.notna()].rolling(period).mean()
         # TODO assert x in df?? or rolling wrt to x??
 
