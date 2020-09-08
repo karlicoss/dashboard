@@ -95,13 +95,6 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
 
 
 def _scatter_matrix_demo(**kwargs):
-    # todo hmm, why it generates such crappy columns? e.g. just zeros and infs??
-    # from hypothesis.extra.pandas import column, data_frames
-    # dfs = data_frames([column('A', dtype=int), column('B', dtype=float)])
-    # for _ in range(10):
-    #     print(dfs.example())
-    #
-
     import numpy as np # type: ignore
     import pandas as pd # type: ignore
     df = pd.DataFrame([
@@ -130,6 +123,7 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
     if legend_label is None:
         legend_label = y
     # todo assert datetime index? test it too
+    # todo although in theory it doens't have to be datetimes with the approprivate avgs??
     #
     # todo warn if unsorted?
     df = df.sort_index()
@@ -141,6 +135,10 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
         # TODO check that nans are only the 'error' columns
         # otherwise fails. I guess errors aren't useful on avg plots anyway
         dfa = dfy[df.index.notna()].rolling(period).mean()
+        # TODO assert x in df?? or rolling wrt to x??
+
+        # somehow plot.line works if 'x' is index? but df[x] doesnt..
+
         # todo different style by default? thicker line? not sure..
         plots.append(plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs))
     return plots
