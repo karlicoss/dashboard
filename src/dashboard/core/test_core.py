@@ -117,3 +117,4 @@ def test_rolling_errors(df):
     # todo saving takes a while.. maybe make it configurable?
     # save_plot(plot, name=f'out/{_count}.html')
     _count += 1
+# TODO somehow reuse these for 'demo' tabs?

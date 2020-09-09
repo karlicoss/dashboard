@@ -41,7 +41,7 @@ def main():
             'statsmodels',
         ],
         extras_require={
-            'testing': ['pytest', 'hypothesis'],
+            'testing': ['pytest', 'hypothesis', 'faker'],
             'linting': ['pytest', 'hypothesis', 'mypy'],
         },
     )

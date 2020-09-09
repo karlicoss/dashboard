@@ -7,6 +7,7 @@ from bokeh.models import ColumnDataSource as CDS, Text, Title
 from bokeh.plotting import figure
 
 
+# TODO also handle errors?
 def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs):
     import hvplot # type: ignore
     import holoviews as hv # type: ignore

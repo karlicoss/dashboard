@@ -49,6 +49,15 @@ def tabs() -> Iterable[Tab]:
     )
     # todo just allow yeld weight function?? autoname it
 
+    def plot_weight_test():
+        from .weight import test_plot_weight as P
+        return P()
+
+    yield Tab(
+        name='weight_test',
+        plotter=plot_weight_test,
+    )
+
     error_test_tab = Tab(
         name='error_handling_test',
         plotter=lambda: "garbage",
