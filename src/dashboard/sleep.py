@@ -165,7 +165,7 @@ def plot_all_sleep(df):
 
     # todo set default slider range to start of year?
     return gridplot([
-        [DS(p1, dates=dates)],
+        [DS(p1, date_column='date')],
         [p1],
         [p2],
         [p3],

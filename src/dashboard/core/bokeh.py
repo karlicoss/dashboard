@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from itertools import cycle
 import logging
 from typing import Dict, Optional
@@ -5,6 +6,9 @@ from typing import Dict, Optional
 from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource as CDS, Text, Title
 from bokeh.plotting import figure
+
+import numpy as np
+import pandas as pd
 
 
 # TODO also handle errors?
@@ -222,15 +226,26 @@ try {{
 
 
 # note.. hmm, sems that they have to share a layout in order for JS callbacks to work??
-def date_slider(p, *, dates):
-    from bokeh.models.widgets import DateRangeSlider # type: ignore
-    from datetime import date, timedelta
-    # FIXME how to determine date range??
+def date_slider(p, *, dates=None, date_column='dt'):
+    # todo a bit crap, but kinda works.. not sure what's the proper way?
     # maybe they aren't computed before show()??
     # p.x_range.on_change('start', lambda attr, old, new: print("Start", new))
     # p.x_range.on_change('end', lambda attr, old, new: print("End", new))
-    sdate = min(dates)
-    edate = date.today() + timedelta(days=5)
+
+    if dates is None:
+        graphs = p.renderers
+        # todo autodetect by type instead of name?
+        dts = np.concatenate([g.data_source.data[date_column] for g in graphs])
+        # FFS... apparently no easier way
+        sdate = pd.Timestamp(np.min(dts)).to_pydatetime()
+        edate = pd.Timestamp(np.max(dts)).to_pydatetime()
+    else:
+        sdate = min(dates)
+        edate = max(dates)
+    # todo not sure if should use today?
+    edate += timedelta(days=5)
+
+    from bokeh.models.widgets import DateRangeSlider # type: ignore
     ds = DateRangeSlider(
         title="Date Range: ",
         start=sdate,

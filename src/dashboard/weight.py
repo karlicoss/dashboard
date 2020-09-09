@@ -1,6 +1,7 @@
 import pandas as pd # type: ignore
 
 from .core.bokeh import rolling, date_figure
+from .core.bokeh import date_slider as DS
 
 # TODO dataframe stubs would be useful
 
@@ -18,7 +19,7 @@ def plot_weight(df=None):
         from .data import weight_dataframe as DF
         df = DF()
 
-    # todo I guess dates off are not useful here?
+    # TODO would be cool to make automatic?
     p = date_figure()
 
     # TODO decide on 'plot' vs 'figure'
@@ -30,7 +31,13 @@ def plot_weight(df=None):
 
     # todo make it default, I always want this
     p.legend.click_policy = 'hide'
-    return p
+
+    from bokeh.layouts import gridplot
+    # TODO how to make slider automatic?
+    return gridplot([
+        [DS(p)],
+        [p],
+    ])
 
 
 # todo move these to hpi? not sure.
