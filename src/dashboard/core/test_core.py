@@ -19,13 +19,6 @@ def hash_df(df) -> str:
     return hashlib.sha256(pd.util.hash_pandas_object(df, index=True).values).hexdigest()
 
 
-def test_bokeh_scatter_matrix():
-    from .bokeh import _scatter_matrix_demo as demo
-
-    # todo save or something?
-    p = demo()
-
-
 # from hypothesis.strategies import text
 # @given(text())
 # def test_decode_inverts_encode(s):

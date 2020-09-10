@@ -60,9 +60,9 @@ def bokeh_main_2():
     from bokeh.models.widgets import Tabs, Panel # type: ignore
     from bokeh.plotting import figure # type: ignore
 
-    from dashboard.core.bokeh import _scatter_matrix_demo
+    from dashboard.core.bokeh import test_scatter_matrix
     import holoviews as hv
-    f1 = hv.render(_scatter_matrix_demo()) # width=2000) # todo wtf??
+    f1 = hv.render(test_scatter_matrix())
 
     f2 = figure()
     f2.circle([0,0,2],[4,-1,1])

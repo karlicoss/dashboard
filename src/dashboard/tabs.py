@@ -10,6 +10,14 @@ class Tab(NamedTuple):
     plotter: Plotter
 
 
+
+def tab(p: Plotter) -> Tab:
+    return Tab(
+        name=p.__name__,
+        plotter=p,
+    )
+
+
 # ideally this file wraps everythign into lazy wrappers, so if half of the tabs are broken, the other still renders
 # todo also need magic top level function similar to old dashboard??
 
@@ -37,6 +45,12 @@ def tabs() -> Iterable[Tab]:
         plotter=plot_sleep
     )
 
+    def sleep_correlations():
+        from .data import emfit_dataframe
+        from .sleep import plot_sleep_correlations
+        return plot_sleep_correlations(emfit_dataframe())
+
+    yield tab(sleep_correlations)
 
     def plot_weight():
         # todo wish I could do it in a lambda...

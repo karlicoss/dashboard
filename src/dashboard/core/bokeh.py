@@ -4,18 +4,19 @@ import logging
 from typing import Dict, Optional
 
 from bokeh.layouts import gridplot
-from bokeh.models import ColumnDataSource as CDS, Text, Title
+from bokeh.models import ColumnDataSource as CDS, Text, Title, Label
 from bokeh.plotting import figure
 
 import numpy as np
 import pandas as pd
 
 
-# TODO also handle errors?
+# TODO FIXME also handle errors?
+# global error list + plotly like number of errors per plot?
 def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs):
-    import hvplot # type: ignore
-    import holoviews as hv # type: ignore
-    from bokeh.models import Label # type: ignore
+    import hvplot
+    import holoviews as hv
+    hv.extension('bokeh')
 
     columns = df.columns
     # TODO might be useful to include/exclude specific cols (e.g. datetime) while keeping them in annotations
@@ -36,6 +37,9 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
         extra_opts.append(hv.opts.Histogram(frame_width=w1, frame_height=h1))
     ##
 
+    # TODO hmm. seems that it magically removing all non-numeric data?
+    # unfortunately, this might mess with labels... wonder if I need my custom impl after all...
+    # I guess need to look in hvplot.gridmatrix code... definitely add a visual test for that...
     sm = hvplot.scatter_matrix(
         df,
         *args,
@@ -99,7 +103,7 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
 # todo plotly/sns also plotted some sort of confidence intervals? not sure if they are useful
 
 
-def _scatter_matrix_demo(**kwargs):
+def test_scatter_matrix_demo():
     import numpy as np # type: ignore
     import pandas as pd # type: ignore
     df = pd.DataFrame([
@@ -119,7 +123,8 @@ def _scatter_matrix_demo(**kwargs):
 
     # TODO annotate with what's expected?
 
-    return scatter_matrix(df, **kwargs)
+    # todo save perhaps??
+    return scatter_matrix(df, width=500, height=500)
 
 
 # todo better name? also have similar function for plotly
@@ -157,6 +162,7 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
     # filtering nans is necessary for rolling mean calculations
     # I guess errors aren't useful on avg plots anyway
 
+    # TODO FIXME size needs to conform the plot (e.g. look at weight plot)
     if len(dfye) > 0:
         # todo hover (with date?) would be nice..
         glyph = Text(
