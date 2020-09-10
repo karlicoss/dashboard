@@ -25,9 +25,19 @@ def locations_dataframe(limit=None):
 
 # todo just use directly?
 @lru_cache()
-def emfit_dataframe():
-    import my.emfit as emfit
-    return emfit.dataframe()
+def sleep_dataframe():
+    # TODO this should be done within HPI
+    import my.emfit as E
+    edf =  E.dataframe()
+
+    import my.jawbone as J
+    jdf =  J.dataframe()
+
+    # TODO add back 'src'??
+    import pandas as pd
+    mdf = pd.concat([jdf, edf])
+
+    return mdf
 
 
 @lru_cache()
@@ -40,8 +50,6 @@ def blood_dataframe():
 @lru_cache()
 def weight_dataframe():
     # import my.body.weight as W
-    # return W.dataframe()
-
     # TODO use an overlay instead. also document how to do this?
     import my.private.weight as W # type: ignore
-    return W.get_dataframe()
+    return W.dataframe()

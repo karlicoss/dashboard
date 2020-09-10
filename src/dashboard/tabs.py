@@ -36,9 +36,9 @@ def tabs() -> Iterable[Tab]:
     )
 
     def plot_sleep():
-        from .data import emfit_dataframe
+        from .data import sleep_dataframe
         from .sleep import plot_all_sleep
-        return plot_all_sleep(emfit_dataframe())
+        return plot_all_sleep(sleep_dataframe())
 
     yield Tab(
         name='sleep',
@@ -46,9 +46,9 @@ def tabs() -> Iterable[Tab]:
     )
 
     def sleep_correlations():
-        from .data import emfit_dataframe
+        from .data import sleep_dataframe
         from .sleep import plot_sleep_correlations
-        return plot_sleep_correlations(emfit_dataframe())
+        return plot_sleep_correlations(sleep_dataframe())
 
     yield tab(sleep_correlations)
 

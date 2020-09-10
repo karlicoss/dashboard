@@ -4,14 +4,12 @@ from .misc import add_daysoff
 from .core.bokeh import rolling, date_figure
 
 
-from bokeh.models import ColumnDataSource as CDS # type: ignore
-from bokeh.models import LinearAxis, Range1d # type: ignore
-import pandas as pd # type: ignore
+from bokeh.models import ColumnDataSource as CDS
+from bokeh.models import LinearAxis, Range1d
+import pandas as pd
 
 
 def _sleep_df(df):
-    # TODO if there are Nans, it fails to plot anything?? handle in a generic way, add warnings
-    df = df[df['error'].isnull()]
     df = df.set_index('date')
 
     # todo make index??
@@ -87,12 +85,13 @@ def plot_sleep_intervals(df):
     df = _sleep_df(df)
     dates = df.index
 
-    ints  = df[['sleep_start', 'sleep_end']].applymap(lambda dt: _mins(dt.time()))
+    ints  = df[['sleep_start', 'sleep_end']].applymap(lambda dt: None if pd.isnull(dt) else _mins(dt.time()))
     # todo maybe instead plot angled lines? then won't need messing with minutes at all? Although still useful to keep
     p = date_figure()
     mint = _mins(time(22, 0))
     maxt = _mins(time(11, 0))
     add_daysoff(p, bottom=mint, top=maxt, dates=dates)
+    # TODO need to handle nans/errors?
     p.vbar(source=CDS(ints), x='date', width=timedelta(1), bottom='sleep_start', top='sleep_end', color='black', alpha=0.1)
 
     from bokeh.models import FuncTickFormatter, FixedTicker # type: ignore
@@ -183,7 +182,8 @@ def plot_all_sleep(df):
 def plot_sleep_correlations(df):
     # todo add holiday/non-holiday? or days from holiday? could be interesting
     # TODO remove hardcoding
-    cols = ['coverage', 'avg_hr', 'hrv_change', 'bed_time', 'recovery', 'respiratory_rate_avg']
+    df['something'] = 'alala'
+    cols = ['date', 'coverage', 'avg_hr', 'something'] # , 'hrv_change', 'bed_time', 'recovery', 'respiratory_rate_avg']
     df = df[cols]
 
     from bokeh.models import HoverTool

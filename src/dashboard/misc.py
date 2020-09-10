@@ -5,6 +5,7 @@ import numpy as np # type: ignore
 import pandas as pd # type: ignore
 
 
+# TODO add reason? e.g. travel/public holiday/weekend?
 def add_daysoff(plot, *, dates, bottom=0, top=80):
     # print(p.y_range.computed_range)
     # TODO not sure how to figure out min/max date automatically??

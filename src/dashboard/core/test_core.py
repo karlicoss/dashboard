@@ -63,7 +63,7 @@ def test_rolling(df):
 # TODO meh
 _count = 0
 
-@settings(derandomize=True)
+@settings(derandomize=True, max_examples=100)
 @given(data_frames(
     index=range_indexes(min_size=10),
     columns=[
@@ -83,7 +83,12 @@ def test_rolling_errors(df):
     df = df.drop_duplicates()
     assume(len(df) > 10)
 
+
     global _count
+    print(_count)
+    if _count > 3:
+        return
+    _count += 1
 
     # todo not sure if should inject these via hypothesis?
     # todo is this deterministic??
@@ -91,7 +96,7 @@ def test_rolling_errors(df):
     nan_dt    = df.sample(frac=0.1).index
     nan_value = df.sample(frac=0.1).index
     df.loc[nan_dt   , 'dt'   ] = np.nan
-    df.loc[nan_dt   , 'error'] = 'no datetime' # todo add some id??
+    df.loc[nan_dt   , 'error'] = 'no datetime ' * 20 # todo add some id??
     df.loc[nan_value, 'value'] = np.nan
     df.loc[nan_value, 'error'] = 'some error' # TODO add dt?
 
@@ -108,6 +113,5 @@ def test_rolling_errors(df):
     plot.legend.click_policy = 'hide'
 
     # todo saving takes a while.. maybe make it configurable?
-    # save_plot(plot, name=f'out/{_count}.html')
-    _count += 1
+    save_plot(plot, name=f'out/{_count}.html')
 # TODO somehow reuse these for 'demo' tabs?

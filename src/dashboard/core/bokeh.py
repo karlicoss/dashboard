@@ -145,8 +145,7 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
         # todo could even keep the 'value' erorrs and display below too.. but for now it's ok
         # ok, if it respected newlines, would be perfect
         # for now this is 'fine'...
-        for line in str(dfxe).splitlines():
-            # TODO FIXME it's truncated.. probably by pandas str conversion?
+        for line in dfxe.to_string().splitlines():
             title = Title(text=line, align='left', text_color='red')
             plot.add_layout(title, 'below')
         # TODO use html maybe?
@@ -164,15 +163,36 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
 
     # TODO FIXME size needs to conform the plot (e.g. look at weight plot)
     if len(dfye) > 0:
-        # todo hover (with date?) would be nice..
-        glyph = Text(
+        # ugh. couldn't easily figure out how to toggle this??
+        # from bokeh.models import LabelSet
+        # labels = LabelSet(
+        #     source=CDS(dfye),
+        #     x=x,
+        #     y=max(df[y]) / 2, # TODO meh
+        #     text='error',
+        #     angle=3.14 / 2,
+        #     text_color='red',
+        # )
+        # plot.add_layout(labels)
+
+        plot.scatter(
+            source=CDS(dfye),
             x=x,
-            y=max(df[y]) / 2, # TODO meh
-            text='error',
-            angle=3.14 / 2,
-            text_color='red'
+            # TODO meh.. how to make the position absolute??
+            y=df[y].quantile(0.8), # to display kinda on top, but not too high
+            legend_label='errors',
+            line_color='red',
+            fill_color='yellow', # ??
+            marker='circle_cross',
+            size=10,
         )
-        plot.add_glyph(CDS(dfye), glyph)
+
+
+        # todo
+        # >>> plot.circle([1,2,3], [4,5,6], name="temp")
+        # >>> plot.select(name="temp")
+        # [GlyphRenderer(id='399d53f5-73e9-44d9-9527-544b761c7705', ...)]
+       
 
     # err_plot = plot.vbar(source=CDS(dfe), x=x, top=max(df[y]), width=0.9, color='red', alpha=0.5)
    
@@ -200,7 +220,10 @@ def date_figure(**kwargs):
     # todo need other columns
     hover = HoverTool(
         tooltips=[
-            ( 'date',   '@date{%F}'            ),
+            ( 'date' , '@date{%F}'),
+            # TODO meh for hardcoding... but sort of works
+            # figure out something better... or always use a base factory for figure() with tools??
+            ( 'error', '@error'   ),
         ],
         formatters={
             '@date'        : 'datetime', # use 'datetime' formatter for '@date' field

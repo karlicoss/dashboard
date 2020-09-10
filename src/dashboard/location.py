@@ -113,9 +113,15 @@ def plot_all(limit=None):
         day, grp = day_and_grp
         # todo uhoh. chromedriver might die?
         days = day.strftime('%Y%m%d')
-        p = plot(day=days, df=grp)
 
         fname = f'output/{days}.png'
+
+        # TODO shit. 20170402 -- float division by zero..
+        p = plot(day=days, df=grp)
+        if days <= '20170403':
+            print(f'skipping {fname}')
+            return
+
         print(f'saving {fname}')
         if True:
             export_png (p, filename=fname)

@@ -68,11 +68,10 @@ def bokeh_main_2():
     f2.circle([0,0,2],[4,-1,1])
 
     # todo need something more lazy?
-    from dashboard.data import emfit_dataframe
+    from dashboard.data import sleep_dataframe
     from dashboard.sleep import plot_sleep
     # TODO would be cool to display logs in the frontend and also currently evaluated function?
     # although pehaps it's easier to just always keep logs open?
-    # sp = plot_sleep(df=emfit_dataframe())
 
 
     from bokeh.models.widgets import DateRangeSlider # type: ignore
