@@ -3,7 +3,7 @@ from itertools import cycle
 import logging
 from typing import Dict, Optional
 
-from bokeh.layouts import gridplot
+from bokeh.layouts import gridplot, column
 from bokeh.models import ColumnDataSource as CDS, Text, Title, Label
 from bokeh.plotting import figure
 
@@ -103,9 +103,9 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
 # todo plotly/sns also plotted some sort of confidence intervals? not sure if they are useful
 
 
-def test_scatter_matrix_demo():
-    import numpy as np # type: ignore
-    import pandas as pd # type: ignore
+def test_scatter_matrix_demo() -> None:
+    import numpy as np
+    import pandas as pd
     df = pd.DataFrame([
         (4     , 25    ),
         (6     , 40    ),
@@ -127,12 +127,32 @@ def test_scatter_matrix_demo():
     return scatter_matrix(df, width=500, height=500)
 
 
+from bokeh.layouts import LayoutDOM
+from bokeh.models import Plot
+from typing import Sequence
+from dataclasses import dataclass
+
+# NamedTuple is friendly towards overriding __iter__
+@dataclass
+class RollingResult:
+    layout: LayoutDOM
+    plots: Sequence[Plot]
+
+    def __iter__(self):
+        return iter(self.plots)
+
+
 # todo better name? also have similar function for plotly
-def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwargs):
+def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwargs) -> RollingResult:
     if legend_label is None:
         legend_label = y
     # todo assert datetime index? test it too
     # todo although in theory it doens't have to be datetimes with the approprivate avgs??
+
+    plot = date_figure()
+
+    layouts = []
+    layouts.append(plot)
 
     nan_x = df.index.isna()
     # FIXME display separately... but not sure where...
@@ -146,6 +166,7 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
         # ok, if it respected newlines, would be perfect
         # for now this is 'fine'...
         # TODO monospace font?
+        # TODO just reuse the datatable??
         for line in dfxe.to_string().splitlines():
             title = Title(text=line, align='left', text_color='red')
             plot.add_layout(title, 'below')
@@ -192,18 +213,24 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
             size=10,
         )
 
+        # TODO would be nice to highlight in table/plot
+        # TODO maybe should display all points, highlight error ones as red (and it sorts anyway so easy to overview?)
+        from bokeh.models.widgets import DataTable, DateFormatter, TableColumn
+        # todo DataCube?? even more elaborate
+        dfye = dfye.reset_index() # todo ugh. otherwise doesn't display the index at all?
+        # TODO display datetime and timedeltas columns properly?
+        # todo maybe display 'error' as the first col?
+        errors_table = DataTable(
+            source=CDS(dfye),
+            columns=[TableColumn(field=c, title=c) for c in dfye.columns],
+        )
+        layouts.append(errors_table)
 
         # todo
         # >>> plot.circle([1,2,3], [4,5,6], name="temp")
         # >>> plot.select(name="temp")
         # [GlyphRenderer(id='399d53f5-73e9-44d9-9527-544b761c7705', ...)]
        
-
-    # err_plot = plot.vbar(source=CDS(dfe), x=x, top=max(df[y]), width=0.9, color='red', alpha=0.5)
-   
-    # todo I guess just don't append it? a bit crap that can't be modified, but at least no issues..
-    # plots.append(err_plot)
-
     plots = []
     plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
     for period in avgs:
@@ -215,7 +242,12 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
 
         # todo different style by default? thicker line? not sure..
         plots.append(plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs))
-    return plots
+
+    return RollingResult(
+        # todo maybe return orig layouts and let the parent wrap into column?
+        layout=column(layouts, sizing_mode='stretch_width'),
+        plots=plots,
+    )
 
 
 # todo not sure if it's really necessary
@@ -391,3 +423,5 @@ def plot_multiple(df, *, columns, **kwargs):
         plots.append(p)
 
     return gridplot([[x] for x in plots])
+
+# TODO use axis name to name the plot (at least by default?)

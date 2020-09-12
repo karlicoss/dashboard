@@ -24,7 +24,8 @@ def plot_weight(df=None):
 
     # TODO decide on 'plot' vs 'figure'
     # TODO autodetecting would be nice, similar to old plotly dashboard
-    [g, g7, g30] = rolling(plot=p, x='dt', y='weight', df=df, color='blue', legend_label='Weight')
+    res = rolling(plot=p, x='dt', y='weight', df=df, color='blue', legend_label='Weight')
+    [g, g7, g30] = res.plots
     g7 .glyph.line_width = 2
     g30.glyph.line_color = 'lightblue'
     g30.glyph.line_width = 2

@@ -10,11 +10,10 @@ def plot_running(df):
 
     # TODO for rolling; if plot is missing, generate automatically for easier interactive experience?
     # TODO ugh. without date_figure it's actually showing unix timestamps... wonder how to make it automatic
-    p = date_figure()
+    # p = date_figure()
 
     # TODO compare it with old running stuff and make sure all the differences are accounted for
     # TODO FIXME rolling doesn't work without setting the index
     rdf = rdf.set_index('start_time')
     # todo filter away stuff without speed? and show as errors perhaps
-    rolling(plot=p, x='start_time', y='speed_avg', df=rdf, avgs=[14])
-    return p
+    return rolling(x='start_time', y='speed_avg', df=rdf, avgs=[14]).layout
