@@ -19,26 +19,22 @@ def plot_weight(df=None):
         from .data import weight_dataframe as DF
         df = DF()
 
-    # TODO would be cool to make automatic?
-    p = date_figure()
-
-    # TODO decide on 'plot' vs 'figure'
+    # todo decide on 'plot' vs 'figure'
     # TODO autodetecting would be nice, similar to old plotly dashboard
-    res = rolling(plot=p, x='dt', y='weight', df=df, color='blue', legend_label='Weight')
+    res = rolling(x='dt', y='weight', df=df, color='blue', legend_label='Weight')
     [g, g7, g30] = res.plots
     g7 .glyph.line_width = 2
     g30.glyph.line_color = 'lightblue'
     g30.glyph.line_width = 2
 
     # todo make it default, I always want this
-    p.legend.click_policy = 'hide'
+    res.figure.legend.click_policy = 'hide'
 
-    from bokeh.layouts import gridplot
+    # todo meh, a bit manual.. but works
+    layout = res.layout
     # TODO how to make slider automatic?
-    return gridplot([
-        [DS(p)],
-        [p],
-    ])
+    layout.children.insert(0, DS(res.figure))
+    return layout
 
 
 # todo move these to hpi? not sure.

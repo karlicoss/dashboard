@@ -33,6 +33,7 @@ def main():
         # it's just unnecessary duplication
 
         install_requires=[
+            'more-itertools',
             'pandas',
             'bokeh',
 

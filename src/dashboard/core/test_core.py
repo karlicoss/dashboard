@@ -52,12 +52,10 @@ def test_rolling(df):
     assume(len(df) > 4) # TODO set min size
     # TODO needs to hande empty as well
 
-
-    plot = figure(plot_width=800, plot_height=200)
-
     df.index.rename('x', inplace=True) # meh. by default index doesn't have name..
-    [g, g2, g5] = rolling(plot=plot, x='x', y='value', df=df, avgs=[2, 5], legend_label='test')
-    save_plot(plot, 'res.html')
+    r= rolling(x='x', y='value', df=df, avgs=[2, 5], legend_label='test')
+    [g, g2, g5] = r
+    save_plot(r.layout, 'res.html')
 
 
 # TODO meh
@@ -105,13 +103,11 @@ def test_rolling_errors(df):
     # todo not sure if should be autodetected?
     df = df.set_index('dt')
 
-    plot = date_figure()
-    gs = rolling(plot=plot, x='dt', y='value', df=df) # TODO shit
-    [g, g7, g30] = gs
+    r = rolling(x='dt', y='value', df=df)
+    [g, g7, g30] = r
 
-
-    plot.legend.click_policy = 'hide'
+    r.figure.legend.click_policy = 'hide'
 
     # todo saving takes a while.. maybe make it configurable?
-    save_plot(plot, name=f'out/{_count}.html')
+    save_plot(r.layout, name=f'out/{_count}.html')
 # TODO somehow reuse these for 'demo' tabs?

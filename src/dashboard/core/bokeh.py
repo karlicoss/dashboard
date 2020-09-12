@@ -129,30 +129,55 @@ def test_scatter_matrix_demo() -> None:
 
 from bokeh.layouts import LayoutDOM
 from bokeh.models import Plot
-from typing import Sequence
+from bokeh.plotting import Figure
+from typing import Sequence, List
 from dataclasses import dataclass
+
+from more_itertools import one
 
 # NamedTuple is friendly towards overriding __iter__
 @dataclass
 class RollingResult:
     layout: LayoutDOM
-    plots: Sequence[Plot]
+    # todo switch to Sequence..
+    plots: List[Plot]
+    figures: List[Figure]
 
     def __iter__(self):
         return iter(self.plots)
 
 
+    @property
+    def figure(self):
+        return one(self.figures)
+
+
 # todo better name? also have similar function for plotly
-def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwargs) -> RollingResult:
+def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, context: Optional[RollingResult]=None, **kwargs) -> RollingResult:
     if legend_label is None:
         legend_label = y
+
+    # meh... don't think I like it
+    # TODO def test this
+    if context is None:
+        ls = []
+        plot = date_figure()
+        ls.append(plot)
+
+        ctx = RollingResult(
+            layout=column(ls, sizing_mode='stretch_width'),
+            plots=[],
+            figures=[plot],
+        )
+    else:
+        ctx = context
+
+    plot = ctx.figure
+    plots = ctx.plots
+    layouts = ctx.layout.children
+
     # todo assert datetime index? test it too
     # todo although in theory it doens't have to be datetimes with the approprivate avgs??
-
-    plot = date_figure()
-
-    layouts = []
-    layouts.append(plot)
 
     nan_x = df.index.isna()
     # FIXME display separately... but not sure where...
@@ -223,6 +248,8 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwar
         errors_table = DataTable(
             source=CDS(dfye),
             columns=[TableColumn(field=c, title=c) for c in dfye.columns],
+            # todo ugh. handle this properly, was too narrow on the sleep plots
+            width=2000,
         )
         layouts.append(errors_table)
 
@@ -231,7 +258,6 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwar
         # >>> plot.select(name="temp")
         # [GlyphRenderer(id='399d53f5-73e9-44d9-9527-544b761c7705', ...)]
        
-    plots = []
     plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
     for period in avgs:
         dfy = df[[y]]
@@ -243,11 +269,13 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, **kwar
         # todo different style by default? thicker line? not sure..
         plots.append(plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs))
 
-    return RollingResult(
-        # todo maybe return orig layouts and let the parent wrap into column?
-        layout=column(layouts, sizing_mode='stretch_width'),
-        plots=plots,
-    )
+    return ctx
+    # return RollingResult(
+    #     # todo maybe return orig layouts and let the parent wrap into column?
+    #     layout=column(layouts, sizing_mode='stretch_width'),
+    #     plots=plots, # todo rename to 'graphs'?
+    #     figures=[plot],
+    # )
 
 
 # todo not sure if it's really necessary

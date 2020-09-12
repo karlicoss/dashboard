@@ -22,31 +22,46 @@ def _sleep_df(df):
     return df
 
 
+# TODO def need to run tests against sleep frames
 def plot_sleep(df):
     df = _sleep_df(df)
     dates = df.index
 
-    # TODO reuse functions for adding moving averages? Perhaps they should operate on dataframes to be framework independent?
-    p = date_figure()
-    add_daysoff(p, dates=dates)
-
     # TODO https://github.com/bokeh/bokeh/blob/master/examples/app/sliders.py
 
     # todo naming: plot vs figure vs graph?
-    [g, g7, g30] = rolling(plot=p, x='date', y='avg_hr', df=df, color='blue', legend_label='HR')
+    r = rolling(x='date', y='avg_hr', df=df, color='blue', legend_label='HR')
+    [g, g7, g30] = r
     g7 .glyph.line_width = 2
     g30.glyph.line_color = 'lightblue'
     g30.glyph.line_width = 2
 
+    p = r.figure
+    # TODO not sure about adding before vs after
+    add_daysoff(p, dates=dates)
 
     p.extra_y_ranges = {'resp': Range1d(start=10, end=25)}
     # Addi the second axis to the plot.
     p.add_layout(LinearAxis(y_range_name='resp'), 'right')
-    rolling(plot=p, x='date', y='respiratory_rate_avg', df=df, color='orange', legend_label='Respiration', avgs=['7D'], y_range_name='resp')
 
     # todo make it default, I always want this
     p.legend.click_policy = 'hide'
-    return p
+
+    # TODO FIXME sigh. bring it back..
+    # TODO shit. need it to reuse the figure somehow??
+    # todo eh?
+    # ERROR:bokeh.core.validation.check:E-1027 (REPEATED_LAYOUT_CHILD): The same model can't be used multiple times in a layout: Column(id='76726', ...)
+    rolling(
+        df=df,
+        x='date', y='respiratory_rate_avg',
+        color='orange',
+        legend_label='Respiration',
+        avgs=['7D'],
+        y_range_name='resp',
+        context=r,
+    )
+    # TODO hmm, it appends error twice? not sure about it...
+    return r
 
 # todo always set output_file("xx.html")? so the latest html is always dumped?
 
@@ -58,17 +73,19 @@ def plot_sleep_hrv(df):
     dates = df.index
 
     # TODO some hrv evening points are right at zero? careful, maybe worth filtering..
-    p2 = date_figure()
-    [g, g7, g30] = rolling(plot=p2, x='date', y='hrv_morning', df=df, color='green' )
+    rm = rolling(df=df, x='date', y='hrv_morning', color='green' )
+    [g, g7, g30] = rm
     g7 .glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
-    [g, g7, g30] = rolling(plot=p2, x='date', y='hrv_evening', df=df, color='purple')
+    re = rolling(df=df, x='date', y='hrv_evening', color='purple', context=rm)
     g7.glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
-    add_daysoff(p2, dates=dates)
 
-    p2.legend.click_policy = 'hide'
-    return p2
+    r = rm
+    add_daysoff(r.figure, dates=dates)
+
+    r.figure.legend.click_policy = 'hide'
+    return r
 
 
 def _mins(tt):
@@ -112,16 +129,18 @@ def plot_sleep_bedtime(df):
     df = _sleep_df(df)
     dates = df.index
 
-    p = date_figure()
-    [g, g7, g30] = rolling(plot=p, x='date', y='bed_time', df=df, color='green' )
+    r = rolling(df=df, x='date', y='bed_time', color='green' )
+    [g, g7, g30] =r
     g7 .glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
-    add_daysoff(p, dates=dates)
+    add_daysoff(r.figure, dates=dates)
 
     # todo how to make this a default?
-    p.legend.click_policy = 'hide'
+    r.figure.legend.click_policy = 'hide'
 
-    return p
+    # TODO crap. at the moment, the return type isn't compatible with show()
+    # use the same delegate trick as with setting __dict__??
+    return r
 
 
 # todo woudl be nice to hightlight hovered datapoints??
@@ -129,23 +148,23 @@ def plot_all_sleep(df):
     # TODO meh
     dates = _sleep_df(df).index
 
-    from bokeh.layouts import gridplot
     from .core.bokeh import date_slider
 
-    p1 = plot_sleep_bedtime(df=df)
+    r1 = plot_sleep_bedtime(df=df)
+    p1 = r1.figure
     p1.legend.orientation = "horizontal"
     p1.legend.location = "top_left"
     # todo ok, this is nice.. maybe make it the default somehow?
 
-    # breakpoint()
-
-    p2 = plot_sleep(df=df)
+    r2 = plot_sleep(df=df)
+    p2 = r2.figure
     p2.legend.orientation = "horizontal"
     p2.legend.location = "top_left"
     p2.x_range = p1.x_range
 
     # TODO filter non-nan values??
-    p3 = plot_sleep_hrv(df=df)
+    r3 = plot_sleep_hrv(df=df)
+    p3 = r3.figure
     p3.legend.orientation = "horizontal"
     p3.legend.location = "top_left"
     p3.x_range = p1.x_range
@@ -162,13 +181,17 @@ def plot_all_sleep(df):
     # @gsteele13 show with notebook handles is for one-way Python->JS updates only. If you want to have bi-directional updates back to Python, you would need to embed a Bokeh server app in the notebook.
     DS = date_slider
 
+    # todo merge_tools=False? might make more sense
+
     # todo set default slider range to start of year?
-    return gridplot([
-        [DS(p1, date_column='date')],
-        [p1],
-        [p2],
-        [p3],
-        [p4],
+    from bokeh.layouts import column
+    return column([
+        DS(p1, date_column='date'),
+        # todo display date slider for every layout?
+        r1.layout,
+        r2.layout,
+        r3.layout,
+        p4,
     ], sizing_mode='stretch_width')
     # todo scatter: maybe only display few latest points? not sure how easy it is to achieve?
 

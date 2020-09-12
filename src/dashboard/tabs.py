@@ -52,25 +52,17 @@ def tabs() -> Iterable[Tab]:
 
     yield tab(sleep_correlations)
 
-    def plot_weight():
+    def weight():
         # todo wish I could do it in a lambda...
         from .weight import plot_weight as P
         return P()
+    yield tab(weight)
 
-    yield Tab(
-        name='weight',
-        plotter=plot_weight,
-    )
-    # todo just allow yeld weight function?? autoname it
-
-    def plot_weight_test():
+    def weight_test():
         from .weight import test_plot_weight as P
         return P()
 
-    yield Tab(
-        name='weight_test',
-        plotter=plot_weight_test,
-    )
+    yield tab(weight_test)
 
     def running():
         from .data import endomondo_dataframe as DF
