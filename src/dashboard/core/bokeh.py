@@ -261,7 +261,10 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
     plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
     for period in avgs:
         dfy = df[[y]]
-        dfa = dfy[df.index.notna()].rolling(period).mean()
+        if 'datetime64' in str(dfy.index.dtype):
+            # you're probably doing something wrong otherwise..
+            assert str(period).endswith('D'), period
+        dfa = dfy[dfy.index.notna()].rolling(period).mean()
         # TODO assert x in df?? or rolling wrt to x??
 
         # somehow plot.line works if 'x' is index? but df[x] doesnt..

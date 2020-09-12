@@ -15,6 +15,6 @@ def plot_running(df):
     # TODO FIXME rolling doesn't work without setting the index
     rdf = rdf.set_index('start_time')
     # todo filter away stuff without speed? and show as errors perhaps
-    r = rolling(x='start_time', y='speed_avg', df=rdf, avgs=[14])
+    r = rolling(x='start_time', y='speed_avg', df=rdf, avgs=['14D'])
     r.figure.legend.click_policy = 'hide'
     return r.layout
