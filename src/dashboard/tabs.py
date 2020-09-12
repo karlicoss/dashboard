@@ -72,9 +72,16 @@ def tabs() -> Iterable[Tab]:
         plotter=plot_weight_test,
     )
 
+    def running():
+        from .data import endomondo_dataframe as DF
+        from .running import plot_running as P
+        return P(DF())
+    yield tab(running)
+
     error_test_tab = Tab(
         name='error_handling_test',
         plotter=lambda: "garbage",
     )
+
     # uncomment to test out error handling
     # yield error_test

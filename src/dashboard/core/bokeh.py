@@ -145,6 +145,7 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
         # todo could even keep the 'value' erorrs and display below too.. but for now it's ok
         # ok, if it respected newlines, would be perfect
         # for now this is 'fine'...
+        # TODO monospace font?
         for line in dfxe.to_string().splitlines():
             title = Title(text=line, align='left', text_color='red')
             plot.add_layout(title, 'below')
@@ -154,7 +155,11 @@ def rolling(*, plot, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, 
     # todo warn if unsorted?
     df = df.sort_index()
 
+    # TODO also error might be present where index is not nan
     nan_y = df[y].isnull() # todo vs isna??
+    # TODO a bit ugly... think about this better
+    if 'error' in df.columns:
+        nan_y = nan_y | ~df['error'].isnull()
 
     dfye = df.loc[ nan_y]
     df   = df.loc[~nan_y]

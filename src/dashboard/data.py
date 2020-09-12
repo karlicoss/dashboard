@@ -53,3 +53,9 @@ def weight_dataframe():
     # TODO use an overlay instead. also document how to do this?
     import my.private.weight as W # type: ignore
     return W.dataframe()
+
+
+@lru_cache
+def endomondo_dataframe():
+    import my.endomondo as E
+    return E.dataframe()
