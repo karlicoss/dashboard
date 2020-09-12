@@ -161,7 +161,7 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
     # TODO def test this
     if context is None:
         ls = []
-        plot = date_figure()
+        plot = date_figure(df=df)
         ls.append(plot)
 
         ctx = RollingResult(
@@ -278,22 +278,46 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
     # )
 
 
-# todo not sure if it's really necessary
-def date_figure(**kwargs):
-    from bokeh.models import HoverTool # type: ignore
+# ugh. without date_figure it's actually showing unix timestamps on the x axis
+# wonder if can make it less manual?
+def date_figure(df=None, **kwargs):
+    from bokeh.models import HoverTool
 
-    # todo need other columns
+    if df is None:
+        # just have at least some defaults..
+        dtypes = {
+            'date' : 'datetime64',
+            'error': str,
+        }
+    else:
+        dtypes = df.reset_index().dtypes.to_dict()
+
+    tooltips   = []
+    formatters = {}
+    for c, t in dtypes.items():
+        fmt = None
+        tfmt = ''
+        if 'datetime64' in str(t): # meh
+            fmt = 'datetime'
+            # todo %T only if it's actually datetime, not date? not sure though...
+            tfmt = '{%F %a %T}'
+        elif 'timedelta64' in str(t): # also meh
+            fmt = 'datetime'
+            # eh, I suppose ok for now. would be nice to reuse in the tables...
+            tfmt = '{%H:%M}'
+        if fmt is not None:
+            formatters['@' + c] = fmt
+
+        tooltips.append((c, f'@{c}' + tfmt))
+
+    # see https://docs.bokeh.org/en/latest/docs/user_guide/tools.html#formatting-tooltip-fields
+    # TODO: use html tooltip with templating
+    # and https://docs.bokeh.org/en/latest/docs/reference/models/formatters.html#bokeh.models.formatters.DatetimeTickFormatter
     hover = HoverTool(
-        tooltips=[
-            ( 'date' , '@date{%F}'),
-            # TODO meh for hardcoding... but sort of works
-            # figure out something better... or always use a base factory for figure() with tools??
-            ( 'error', '@error'   ),
-        ],
-        formatters={
-            '@date'        : 'datetime', # use 'datetime' formatter for '@date' field
-        },
+        tooltips=tooltips,
+        formatters=formatters,
         # display a tooltip whenever the cursor is vertically in line with a glyph
+        # TODO not sure I like this, it's a bit spammy
         mode='vline'
     )
     f = figure(x_axis_type='datetime', plot_width=2000, **kwargs)
