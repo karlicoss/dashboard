@@ -272,6 +272,11 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
         # todo different style by default? thicker line? not sure..
         plots.append(plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs))
 
+
+    # ugh. hacky but does the trick. if too early, it complains that
+    # 'Before legend properties can be set, you must add a Legend explicitly, or call a glyph method with a legend parameter set.'
+    plot.legend.click_policy = 'hide'
+
     return ctx
     # return RollingResult(
     #     # todo maybe return orig layouts and let the parent wrap into column?

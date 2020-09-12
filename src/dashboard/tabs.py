@@ -66,9 +66,23 @@ def tabs() -> Iterable[Tab]:
 
     def running():
         from .data import endomondo_dataframe as DF
-        from .running import plot_running as P
+        from .cardio import plot_running as P
         return P(DF())
     yield tab(running)
+
+    def spinning():
+        from .data import endomondo_dataframe as DF
+        from .cardio import plot_spinning as P
+        return P(DF())
+    yield tab(spinning)
+
+    # TODO have an autodiscovery mechanism?
+    # and allow for explicit invocations too
+    def cross_trainer():
+        from .data import endomondo_dataframe as DF
+        from .cardio import plot_cross_trainer as P
+        return P(DF())
+    yield tab(cross_trainer)
 
     error_test_tab = Tab(
         name='error_handling_test',
