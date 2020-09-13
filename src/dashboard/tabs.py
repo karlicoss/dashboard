@@ -79,7 +79,7 @@ def tabs() -> Iterable[Tab]:
     # TODO have an autodiscovery mechanism?
     # and allow for explicit invocations too
     def cross_trainer():
-        from .data import endomondo_dataframe as DF
+        from .data import cross_trainer_dataframe as DF
         from .cardio import plot_cross_trainer as P
         return P(DF())
     yield tab(cross_trainer)

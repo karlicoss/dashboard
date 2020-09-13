@@ -55,7 +55,13 @@ def weight_dataframe():
     return W.dataframe()
 
 
-@lru_cache
+@lru_cache()
 def endomondo_dataframe():
     import my.endomondo as E
     return E.dataframe()
+
+
+@lru_cache()
+def cross_trainer_dataframe():
+    import my.body.exercise as E
+    return E.cross_trainer_dataframe()

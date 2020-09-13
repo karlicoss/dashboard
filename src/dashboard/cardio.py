@@ -41,6 +41,7 @@ def plot_running(df):
         r2.layout,
         r3.layout,
     ])
+# TODO would be cool to display all HR plots on the same page? not sure how to align them properly though
 
 
 def plot_spinning(df):
@@ -54,6 +55,7 @@ def plot_spinning(df):
     r.figure.title.text = 'Spinning HR'
 
     return r.layout
+# TODO merge in manual descriptions, attach interval information
 
 
 # TODO pay attention at warnings from the old dashboard
@@ -61,10 +63,28 @@ def plot_spinning(df):
 def plot_cross_trainer(df):
     df = df.set_index('start_time')
 
-    edf = df[df['sport'].str.contains('Cross training')]
+    # HPI: generally, make sure all types are explicitly numeric/dateish apart from the exceptions?
+    # check with a decorator or something??
+    df['power_to_hr'] = df['power_avg'] / df['heart_rate_avg']
 
-    r = rolling(df=edf, x='start_time', y='heart_rate_avg', avgs=['14D'])
-    r.figure.title.text = 'Cross trainer HR'
-    # TODO combine with manually logged data and get power etc
-   
-    return r.layout
+    # TODO 14D?
+    r1 = rolling(df=df, x='start_time', y='heart_rate_avg', avgs=['7D'])
+    r1.figure.title.text = 'Cross trainer HR'
+    r2 = rolling(df=df, x='start_time', y='power_avg'     , avgs=['7D'])
+    r2.figure.title.text = 'Cross trainer power'
+    r3 = rolling(df=df, x='start_time', y='power_to_hr'   , avgs=['7D'])
+    r3.figure.title.text = 'Cross trainder power to HR (the more the better)'
+
+    return column([
+        r1.layout,
+        r2.layout,
+        r3.layout,
+    ])
+
+# TODO fill distance for treadmill from manual pictures?
+
+# TODO for data filtering -- would be nice to have some heavy, reasonable preparation in python
+# but then have a jsy interface to manipulate and do this vvv kind of filtering
+# and if it was preserved across the sessions..
+# TODO plot with all cardio exercise? not sure if would make much sense. but a table probable would..
+# TODO rolling: check that columns types are numeric? otherwise get weird errors

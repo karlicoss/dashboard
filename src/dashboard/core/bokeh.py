@@ -44,7 +44,12 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
         df,
         *args,
         **kwargs,
+        show_grid=True,
     ).opts(*extra_opts)
+    # TODO add the presence of the grid to the 'visual tests'
+    # but if I swith it to raw bokeh -- it has Grid class.. might need to mess with
+    # also maybe add extra axis under each plot in the grid? easier for a huge matrix of plots
+    # some code in old dashboard
 
 
     if regression:
@@ -276,6 +281,7 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
     # ugh. hacky but does the trick. if too early, it complains that
     # 'Before legend properties can be set, you must add a Legend explicitly, or call a glyph method with a legend parameter set.'
     plot.legend.click_policy = 'hide'
+    # todo 'mute' is nice too?
 
     return ctx
     # return RollingResult(
@@ -485,3 +491,5 @@ def plot_multiple(df, *, columns, **kwargs):
     return gridplot([[x] for x in plots])
 
 # TODO use axis name to name the plot (at least by default?)
+
+# TODO nan handling for y values + add tests

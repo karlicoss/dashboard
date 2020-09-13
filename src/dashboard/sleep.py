@@ -205,8 +205,9 @@ def plot_all_sleep(df):
 def plot_sleep_correlations(df):
     # todo add holiday/non-holiday? or days from holiday? could be interesting
     # TODO remove hardcoding
-    df['something'] = 'alala'
-    cols = ['date', 'coverage', 'avg_hr', 'something'] # , 'hrv_change', 'bed_time', 'recovery', 'respiratory_rate_avg']
+    # TODO seems that is simply omits non-numeric columns?? check the dimension of grid and warn
+    # df['something'] = 'alala'
+    cols = ['date', 'coverage', 'avg_hr', 'hrv_change'] # , 'bed_time', 'recovery', 'respiratory_rate_avg']
     df = df[cols]
 
     from bokeh.models import HoverTool
