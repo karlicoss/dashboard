@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from itertools import cycle
 import logging
 from typing import Dict, Optional
+import warnings
 
 from bokeh.layouts import gridplot, column
 from bokeh.models import ColumnDataSource as CDS, Text, Title, Label
@@ -157,6 +158,16 @@ class RollingResult:
         return one(self.figures)
 
 
+# TODO ok, so multiple cases
+# x | y | err | res
+# N   *   *   | error table
+# Y   N   N   | set err  , goto YNY
+# Y   N   Y   | 'guess' y, goto YYY
+# Y   Y   N   | plot
+# Y   Y   Y   | plot, highlight, error table
+# test for it, also add to docs.
+# this should def be common with plotly
+
 # todo better name? also have similar function for plotly
 def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, context: Optional[RollingResult]=None, **kwargs) -> RollingResult:
     if legend_label is None:
@@ -184,11 +195,20 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
     # todo assert datetime index? test it too
     # todo although in theory it doens't have to be datetimes with the approprivate avgs??
 
-    nan_x = df.index.isna()
-    # FIXME display separately... but not sure where...
-    dfxe = df.loc[ nan_x]
-    df   = df.loc[~nan_x]
-    if len(dfxe) > 0:
+    err_x = df.index.isna()
+    # filtering nans is necessary for rolling mean calculations
+    err_y = df[y].isnull() # todo vs isna??
+    # todo a bit ugly... think about this better
+    if 'error' in df.columns:
+        err_y = err_y | ~df['error'].isnull()
+
+    err = err_x | err_y
+
+
+    dfe  = df.loc[ err]
+    dfye = df.loc[err_y & ~err_x]
+    df   = df.loc[~err]
+    if len(dfe) > 0:
         # TODO think about a better location
         # todo hmm, not sure if Title is the best thing to use? but Label/Text didn't work from the first attempt
 
@@ -197,32 +217,19 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
         # for now this is 'fine'...
         # TODO monospace font?
         # TODO just reuse the datatable??
-        for line in dfxe.to_string().splitlines():
-            title = Title(text=line, align='left', text_color='red')
-            plot.add_layout(title, 'below')
+        for line in dfe.to_string().splitlines():
+            title = Title(text='Encountered errors:', align='left', text_color='red')
+            # plot.add_layout(title, 'below')
+            # todo the shit? it just doesn't like it when there is a table??
+            # TODO FIXME keep errors in the table
         # TODO use html maybe?
         # https://stackoverflow.com/a/54132533/706389
-
-    # todo warn if unsorted?
-    df = df.sort_index()
-
-    # TODO also error might be present where index is not nan
-    nan_y = df[y].isnull() # todo vs isna??
-    # TODO a bit ugly... think about this better
-    if 'error' in df.columns:
-        nan_y = nan_y | ~df['error'].isnull()
-
-    dfye = df.loc[ nan_y]
-    df   = df.loc[~nan_y]
-    # filtering nans is necessary for rolling mean calculations
-    # I guess errors aren't useful on avg plots anyway
-
-    # TODO FIXME size needs to conform the plot (e.g. look at weight plot)
-    if len(dfye) > 0:
+       
+        # TODO FIXME size needs to conform the plot (e.g. look at weight plot)
         # ugh. couldn't easily figure out how to toggle this??
         # from bokeh.models import LabelSet
         # labels = LabelSet(
-        #     source=CDS(dfye),
+        #     source=CDS(dfe),
         #     x=x,
         #     y=max(df[y]) / 2, # TODO meh
         #     text='error',
@@ -247,12 +254,12 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
         # TODO maybe should display all points, highlight error ones as red (and it sorts anyway so easy to overview?)
         from bokeh.models.widgets import DataTable, DateFormatter, TableColumn
         # todo DataCube?? even more elaborate
-        dfye = dfye.reset_index() # todo ugh. otherwise doesn't display the index at all?
+        dfe = dfe.reset_index() # todo ugh. otherwise doesn't display the index at all?
         # TODO display datetime and timedeltas columns properly?
         # todo maybe display 'error' as the first col?
         errors_table = DataTable(
-            source=CDS(dfye),
-            columns=[TableColumn(field=c, title=c) for c in dfye.columns],
+            source=CDS(dfe),
+            columns=[TableColumn(field=c, title=c) for c in dfe.columns],
             # todo ugh. handle this properly, was too narrow on the sleep plots
             width=2000,
         )
@@ -262,12 +269,18 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
         # >>> plot.circle([1,2,3], [4,5,6], name="temp")
         # >>> plot.select(name="temp")
         # [GlyphRenderer(id='399d53f5-73e9-44d9-9527-544b761c7705', ...)]
-       
+   
+    # todo warn if unsorted?
+    df = df.sort_index()
+
     plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
     for period in avgs:
         dfy = df[[y]]
+        if str(dfy.index.dtype) == 'object':
+            warnings.warn("Index type is 'object'. You're likely doing something wrong")
         if 'datetime64' in str(dfy.index.dtype):
             # you're probably doing something wrong otherwise..
+            # todo warn too?
             assert str(period).endswith('D'), period
         dfa = dfy[dfy.index.notna()].rolling(period).mean()
         # TODO assert x in df?? or rolling wrt to x??

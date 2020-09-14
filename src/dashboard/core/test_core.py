@@ -56,6 +56,7 @@ def test_rolling(df):
     r= rolling(x='x', y='value', df=df, avgs=[2, 5], legend_label='test')
     [g, g2, g5] = r
     save_plot(r.layout, 'res.html')
+# TODO test all nans in y
 
 
 # TODO meh
@@ -111,3 +112,4 @@ def test_rolling_errors(df):
     # todo saving takes a while.. maybe make it configurable?
     save_plot(r.layout, name=f'out/{_count}.html')
 # TODO somehow reuse these for 'demo' tabs?
+# TODO test when too many errors? title overfills and the plot collapses to zero
