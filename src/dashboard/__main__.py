@@ -15,7 +15,7 @@ def render_tab(*, tab: Tab, filename: Path):
     save(res)
 
 
-def run(to: Path, tab_name: Optional[str]=None) -> Iterable[Exception]:
+def run(to: Path, tab_name: Optional[str]=None, debug: bool=False) -> Iterable[Exception]:
     for tab in tabs():
         if tab_name is not None and tab.name != tab_name:
             logging.info('skipping %s', tab.name)
@@ -26,7 +26,15 @@ def run(to: Path, tab_name: Optional[str]=None) -> Iterable[Exception]:
         fname = to / (tab.name + '.html')
 
         try:
-            res = render_tab(tab=tab, filename=fname)
+            if debug:
+                # todo optional dependency?
+                from ipdb import launch_ipdb_on_exception # type: ignore
+                ctx = launch_ipdb_on_exception
+            else:
+                from contextlib import nullcontext
+                ctx = nullcontext
+            with ctx():
+                res = render_tab(tab=tab, filename=fname)
         except Exception as e:
             # TODO make it defensive? if there were any errors, backup old file, don't overwrite? dunno.
             logging.exception(e)
@@ -48,10 +56,11 @@ def main():
     p = P()
     p.add_argument('--to', type=Path, required=True)
     p.add_argument('--tab', type=str, help='Plot specific tab (by default plots all)')
+    p.add_argument('--debug', action='store_true', help='debug on exception')
     args = p.parse_args()
 
     # todo pass function names to render? seems easier than tab names? or either?
-    errors = list(run(to=args.to, tab_name=args.tab))
+    errors = list(run(to=args.to, tab_name=args.tab, debug=args.debug))
     if len(errors) > 0:
         logging.error('Had %d errors while rendering', len(errors))
         for e in errors:
