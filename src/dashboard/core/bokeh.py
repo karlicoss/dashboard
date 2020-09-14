@@ -159,17 +159,18 @@ class RollingResult:
 
 
 # TODO ok, so multiple cases
-# x | y | err | res
-# N   *   *   | error table
-# Y   N   N   | set err  , goto YNY
-# Y   N   Y   | 'guess' y, goto YYY
-# Y   Y   N   | plot
-# Y   Y   Y   | plot, highlight, error table
+#    x | y | err | res
+# 1. N   *   *   | error table
+# 2. Y   N   N   | set err  , goto YNY
+# 3. Y   N   Y   | plot (fake y)  , error table
+# 4. Y   Y   N   | plot
+# 5. Y   Y   Y   | plot, highlight, error table
 # test for it, also add to docs.
 # this should def be common with plotly
 
 # todo better name? also have similar function for plotly
 def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, context: Optional[RollingResult]=None, **kwargs) -> RollingResult:
+    # todo should copy df first??
     if legend_label is None:
         legend_label = y
 
@@ -195,19 +196,45 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
     # todo assert datetime index? test it too
     # todo although in theory it doens't have to be datetimes with the approprivate avgs??
 
-    err_x = df.index.isna()
-    # filtering nans is necessary for rolling mean calculations
-    err_y = df[y].isnull() # todo vs isna??
-    # todo a bit ugly... think about this better
-    if 'error' in df.columns:
-        err_y = err_y | ~df['error'].isnull()
+    has_x = df.index.notna()
+    has_y = df[y].notna()
+    err   = df['error'].notna() if 'error' in df.columns else df.index == 'how_to_make_empty_index?'
+    # ^^^ todo a bit ugly... think about this better
 
-    err = err_x | err_y
+    for_table = ~has_x # case 1 is handled
 
+    # case 2: set proper error for ones that don't have y
+    df.loc[has_x & ~has_y & ~err, 'error'] = f'{y} is nan/null'
+    # now case 2 and 3 are the same
 
-    dfe  = df.loc[ err]
-    dfye = df.loc[err_y & ~err_x]
-    df   = df.loc[~err]
+    # case 3
+    case_3 = has_x & ~has_y
+    for_table |= case_3
+    for_marks  = case_3
+
+    # case 4, 5
+    ok = has_x & has_y
+    case_4 = ok & err
+    for_table |= case_4
+    for_warn   = case_4
+
+    dfm = df.loc[for_marks]
+    dfe = df.loc[for_table]
+    dfw = df.loc[for_warn]
+    df  = df.loc[ok]
+    if len(dfm) > 0:
+        plot.scatter(
+            source=CDS(dfm),
+            x=x,
+            # TODO meh.. how to make the position absolute??
+            y=df[y].quantile(0.8), # to display kinda on top, but not too high
+            legend_label='errors',
+            line_color='red',
+            fill_color='yellow', # ??
+            marker='circle_cross',
+            size=10,
+        )
+
     if len(dfe) > 0:
         # TODO think about a better location
         # todo hmm, not sure if Title is the best thing to use? but Label/Text didn't work from the first attempt
@@ -238,18 +265,6 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
         # )
         # plot.add_layout(labels)
 
-        plot.scatter(
-            source=CDS(dfye),
-            x=x,
-            # TODO meh.. how to make the position absolute??
-            y=df[y].quantile(0.8), # to display kinda on top, but not too high
-            legend_label='errors',
-            line_color='red',
-            fill_color='yellow', # ??
-            marker='circle_cross',
-            size=10,
-        )
-
         # TODO would be nice to highlight in table/plot
         # TODO maybe should display all points, highlight error ones as red (and it sorts anyway so easy to overview?)
         from bokeh.models.widgets import DataTable, DateFormatter, TableColumn
@@ -269,6 +284,9 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
         # >>> plot.circle([1,2,3], [4,5,6], name="temp")
         # >>> plot.select(name="temp")
         # [GlyphRenderer(id='399d53f5-73e9-44d9-9527-544b761c7705', ...)]
+
+    if len(dfw) > 0:
+        plot.circle(source=CDS(dfw), x=x, y=y, legend_label='warnings', size=20, color='yellow')
    
     # todo warn if unsorted?
     df = df.sort_index()
