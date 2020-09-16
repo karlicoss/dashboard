@@ -7,7 +7,7 @@ from bokeh.plotting import figure
 
 from .bokeh import rolling, date_figure
 
-from hypothesis import given, settings, assume
+from hypothesis import given, settings, assume, example
 from hypothesis.extra.pandas import columns, column, data_frames, range_indexes
 import hypothesis.strategies as st
 
@@ -40,29 +40,28 @@ def save_plot(plot, name: str):
         raise RuntimeError(name, suf)
 
 
-# todo limit the number of examples?? or min_size?
 @settings(derandomize=True)
 @given(data_frames(
     columns=columns(['value'], dtype=float),
     rows=st.tuples(
         st.floats(min_value=3.0, max_value=100.0, allow_nan=False),
     ),
-))
+).filter(lambda df: len(df) > 4))
+# @example(pd.DataFrame([], columns=['value']))
+@example(pd.DataFrame([dict(
+    value=None,
+) for _ in range(10)]))
 def test_rolling(df):
-    assume(len(df) > 4) # TODO set min size
-    # TODO needs to hande empty as well
-
     df.index.rename('x', inplace=True) # meh. by default index doesn't have name..
     r= rolling(x='x', y='value', df=df, avgs=[2, 5], legend_label='test')
     [g, g2, g5] = r
     save_plot(r.layout, 'res.html')
-# TODO test all nans in y
 
 
-# TODO meh
+# todo meh, there must be a better way?
 _count = 0
 
-@settings(derandomize=True, max_examples=100)
+@settings(derandomize=True, max_examples=10)
 @given(data_frames(
     index=range_indexes(min_size=10),
     columns=[
@@ -76,17 +75,14 @@ _count = 0
         ),
         st.floats(min_value=20.0, max_value=100.0),
     ),
-))
+    # for some reason hypothesis spams me with duplicate results...
+).filter(lambda df: len(df) > 10))
+@example(pd.DataFrame([dict(
+    dt=None,
+    value=None,
+) for i in range(5)]).astype(dict(value=float)))
 def test_rolling_errors(df):
-    # TODO no idea why hypothesis spams me with duplicate results..
-    df = df.drop_duplicates()
-    assume(len(df) > 10)
-
-
     global _count
-    print(_count)
-    if _count > 3:
-        return
     _count += 1
 
     # todo not sure if should inject these via hypothesis?

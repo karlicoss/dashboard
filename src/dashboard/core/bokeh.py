@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from itertools import cycle
 import logging
 from typing import Dict, Optional
@@ -158,7 +158,7 @@ class RollingResult:
         return one(self.figures)
 
 
-# TODO ok, so multiple cases
+# ok, so multiple cases
 #    x | y | err | res
 # 1. N   *   *   | error table
 # 2. Y   N   N   | set err  , goto YNY
@@ -223,11 +223,15 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
     dfw = df.loc[for_warn]
     df  = df.loc[ok]
     if len(dfm) > 0:
+        # todo meh.. how to make the position absolute??
+        some_y = df[y].quantile(0.8) # to display kinda on top, but not too high
+        if np.isnan(some_y):
+            # otherwise fails during JSON serialization
+            some_y = 0.0
         plot.scatter(
             source=CDS(dfm),
             x=x,
-            # TODO meh.. how to make the position absolute??
-            y=df[y].quantile(0.8), # to display kinda on top, but not too high
+            y=some_y,
             legend_label='errors',
             line_color='red',
             fill_color='yellow', # ??
@@ -292,7 +296,7 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
                 # for fixed width types, we can have something kind of reasonable
                 if str(t).startswith('float'):
                     l = df[c].dropna().map(str).str.len().max()
-                    width = max(l or 0, 4)
+                    width = 4 if np.isnan(l) else l
 
                 if str(t).startswith('datetime'):
                     formatter = DateFormatter(format='%Y%m%d %H%M%S %Z', nan_format='Nan')
@@ -346,6 +350,14 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
    
     # todo warn if unsorted?
     df = df.sort_index()
+
+    if len(df) == 0:
+        # add a fake point, so at least plotting doesn't fail...
+        df = pd.DataFrame([{
+            x: datetime.fromtimestamp(0),
+            y: 0.0,
+        }]).set_index(x)
+        avgs = ['3D' for _ in avgs]
 
     plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
     for period in avgs:
@@ -578,5 +590,3 @@ def plot_multiple(df, *, columns, **kwargs):
     return gridplot([[x] for x in plots])
 
 # TODO use axis name to name the plot (at least by default?)
-
-# TODO nan handling for y values + add tests
