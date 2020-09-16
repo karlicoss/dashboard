@@ -248,7 +248,6 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
             title = Title(text='Encountered errors:', align='left', text_color='red')
             # plot.add_layout(title, 'below')
             # todo the shit? it just doesn't like it when there is a table??
-            # TODO FIXME keep errors in the table
         # TODO use html maybe?
         # https://stackoverflow.com/a/54132533/706389
        
@@ -265,18 +264,75 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
         # )
         # plot.add_layout(labels)
 
-        # TODO would be nice to highlight in table/plot
-        # TODO maybe should display all points, highlight error ones as red (and it sorts anyway so easy to overview?)
+        # TODO sort?
+
+        # todo maybe should display all points, highlight error ones as red (and it sorts anyway so easy to overview?)
+        # todo would be nice to highlight the corresponding points in table/plot
         from bokeh.models.widgets import DataTable, DateFormatter, TableColumn
+        from bokeh.models.widgets.tables import DateFormatter, NumberFormatter, HTMLTemplateFormatter
+        # didn't work at all??
+        # from bokeh.models.widgets.tables import ScientificFormatter
+
         # todo DataCube?? even more elaborate
         dfe = dfe.reset_index() # todo ugh. otherwise doesn't display the index at all?
-        # TODO display datetime and timedeltas columns properly?
+        dfe = dfe.sort_values(by=x)
+
         # todo maybe display 'error' as the first col?
+        datefmt = DateFormatter(format="%Y-%m-%d")
+        # todo speed_avg could have less digits (guess by the dispersion or something??)
+
+        # TODO horrible, but js bits of bokeh compute some complete bullhit for column widths
+        # todo set monospace font??
+        one_char = 10 # pixels
+        def datatable_columns(df):
+            for c, t in df.dtypes.items():
+                formatter = None
+
+                width = 15 # in characters
+                # for fixed width types, we can have something kind of reasonable
+                if str(t).startswith('float'):
+                    l = df[c].dropna().map(str).str.len().max()
+                    width = max(l or 0, 4)
+
+                if str(t).startswith('datetime'):
+                    formatter = DateFormatter(format='%Y%m%d %H%M%S %Z', nan_format='Nan')
+                    width = 15
+                elif str(t).startswith('timedelta'):
+                    # TODO warn if df contains stuff with duration >1D?
+                    # without nan_format, it results in NaN:Nan:Nan
+                    formatter = DateFormatter(format='%H:%M:%S', nan_format='Nan')
+                    width = 8
+
+                # if c == 'error':
+                #     # meh, but the only easy way to limit and ellipsize it I found
+                #     # aaand it still computes width in some weird way, ends up taking too much space
+                #     formatter = HTMLTemplateFormatter(template='<div style="text-overflow: ellipsis; overflow: hidden; width: 60ch;"><%= value %></div>')
+
+                tc = TableColumn(
+                    field=c,
+                    title=c,
+                    **({} if formatter is None else dict(formatter=formatter)),
+                    width=width * one_char,
+                )
+                yield tc
+
+        # TODO hmm, if we reuse the data source, editing & selection might work?
         errors_table = DataTable(
             source=CDS(dfe),
-            columns=[TableColumn(field=c, title=c) for c in dfe.columns],
+            columns=list(datatable_columns(dfe)),
             # todo ugh. handle this properly, was too narrow on the sleep plots
+            editable=True,
+
             width=2000,
+
+            # default ends up in trimmed table content
+            autosize_mode='none',
+
+            # this might overstretch the parent...
+            # autosize_mode='fit_viewport',
+
+            # this just makes it respect the parent width
+            # width_policy='fit',
         )
         layouts.append(errors_table)
 
