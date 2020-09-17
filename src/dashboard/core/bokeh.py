@@ -591,3 +591,16 @@ def plot_multiple(df, *, columns, **kwargs):
     return gridplot([[x] for x in plots])
 
 # TODO use axis name to name the plot (at least by default?)
+
+
+def set_hhmm_axis(axis, *, mint: int, maxt: int, period: int=30) -> None:
+    from bokeh.models import FuncTickFormatter, FixedTicker
+    # FIXME infer mint/maxt
+    axis.ticker = FixedTicker(ticks=list(range(mint, maxt, period)))
+    axis.formatter = FuncTickFormatter(code="""
+        var hh = Math.floor(tick / 60 % 24).toString()
+        var mm = (tick % 60).toString()
+        if (hh.length == 1) hh = "0" + hh;
+        if (mm.length == 1) mm = "0" + mm;
+        return `${hh}:${mm}`
+    """)

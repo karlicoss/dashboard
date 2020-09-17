@@ -71,3 +71,11 @@ def cardio_dataframe():
 def cross_trainer_dataframe():
     import my.body.exercise.cross_trainer as E
     return E.dataframe()
+
+
+@lru_cache
+def rescuetime_dataframe():
+    import my.rescuetime as R
+    import pandas as pd
+    # todo hmm, mypy gone a bit mad here?
+    return pd.DataFrame(e._asdict() for e in R.entries()) # type: ignore[call-arg, attr-defined]

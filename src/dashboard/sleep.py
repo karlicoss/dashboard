@@ -111,17 +111,10 @@ def plot_sleep_intervals(df):
     # TODO need to handle nans/errors?
     p.vbar(source=CDS(ints), x='date', width=timedelta(1), bottom='sleep_start', top='sleep_end', color='black', alpha=0.1)
 
-    from bokeh.models import FuncTickFormatter, FixedTicker # type: ignore
-    p.yaxis.ticker = FixedTicker(ticks=list(range(mint, maxt, 30)))
-    p.yaxis.formatter = FuncTickFormatter(code="""
-        var hh = Math.floor(tick / 60 % 24).toString()
-        var mm = (tick % 60).toString()
-        if (hh.length == 1) hh = "0" + hh;
-        if (mm.length == 1) mm = "0" + mm;
-        return `${hh}:${mm}`
-    """)
-    p.legend.click_policy = 'hide'
+    from .core.bokeh import set_hhmm_axis
+    set_hhmm_axis(p.yaxis, mint=mint, maxt=maxt)
 
+    p.legend.click_policy = 'hide'
     return p
 
 

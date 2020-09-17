@@ -1,14 +1,16 @@
 from datetime import timedelta
 
-from bokeh.models import ColumnDataSource as CDS # type: ignore
-import numpy as np # type: ignore
-import pandas as pd # type: ignore
+from bokeh.models import ColumnDataSource as CDS
+import numpy as np
+import pandas as pd
 
 
+# NOTE: vbar is _centered_ at the corresponding x
 # TODO add reason? e.g. travel/public holiday/weekend?
 def add_daysoff(plot, *, dates, bottom=0, top=80):
     # print(p.y_range.computed_range)
     # TODO not sure how to figure out min/max date automatically??
+    # FIXME align to day boundary?
     mind = min(dates)
     maxd = max(dates)
     day = timedelta(1)

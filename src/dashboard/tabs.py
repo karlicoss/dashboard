@@ -91,6 +91,14 @@ def tabs() -> Iterable[Tab]:
         return P(DF())
     yield tab(exercise_volume)
 
+
+    def rescuetime():
+        from .data import rescuetime_dataframe as DF
+        from .rescuetime import plot_rescuetime as P
+        return P(DF())
+    yield tab(rescuetime)
+
+
     error_test_tab = Tab(
         name='error_handling_test',
         plotter=lambda: "garbage",
