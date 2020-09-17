@@ -88,3 +88,36 @@ def plot_cross_trainer(df):
 # and if it was preserved across the sessions..
 # TODO plot with all cardio exercise? not sure if would make much sense. but a table probable would..
 # TODO rolling: check that columns types are numeric? otherwise get weird errors
+
+
+# todo display breakdown by sport as well?
+def plot_cardio_volume(df):
+    # todo not sure ... should it always copy??
+    df = df.copy()
+    df = df.set_index('start_time')
+
+    # todo not sure if this belongs to HPI or here??
+
+    # TODO: actually use heartbeats as proxy? and remove kcals??
+    # see https://beepb00p.xyz/heartbeats_vs_kcals.html
+    df['volume'] = df['kcal']
+
+    # assume it's zero on non-cardio days
+    # TODO need to take walking etc into the account... infer from location data?
+    # FIXME need to handle non-numeric fields carefully? at least warn they they would be dropped..
+    # def test this too
+    df = df.resample('D').sum()
+
+    r = rolling(df=df, x='start_time', y='volume', avgs=['7D', '30D'])
+    [g, g7, g30] = r
+    g7 .glyph.line_dash = 'dashed'
+    g30.glyph.line_width = 2
+
+    f = r.figure
+    f.title.text = 'Cardio exercise volume'
+    f.legend.orientation = 'horizontal'
+    f.legend.location = 'top_left'
+
+    return r.layout
+# note: old dashboard -- ok, plotting just endomondo stuff with old dashboard using kcal as volume proxy, matches very closely
+# TODO would be interesting to add BMR as a third plot? or just add to total somhow..

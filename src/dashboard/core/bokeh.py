@@ -292,6 +292,7 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
             for c, t in df.dtypes.items():
                 formatter = None
 
+                # TODO also use col name.. then won't have to handle nans!
                 width = 15 # in characters
                 # for fixed width types, we can have something kind of reasonable
                 if str(t).startswith('float'):

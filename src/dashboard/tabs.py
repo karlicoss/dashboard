@@ -84,6 +84,13 @@ def tabs() -> Iterable[Tab]:
         return P(DF())
     yield tab(cross_trainer)
 
+
+    def exercise_volume():
+        from .data import endomondo_dataframe as DF
+        from .cardio import plot_cardio_volume as P
+        return P(DF())
+    yield tab(exercise_volume)
+
     error_test_tab = Tab(
         name='error_handling_test',
         plotter=lambda: "garbage",

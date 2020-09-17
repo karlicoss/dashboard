@@ -62,6 +62,12 @@ def endomondo_dataframe():
 
 
 @lru_cache()
+def cardio_dataframe():
+    import my.body.exercise.cardio as E
+    return E.dataframe()
+
+
+@lru_cache()
 def cross_trainer_dataframe():
-    import my.body.exercise as E
-    return E.cross_trainer_dataframe()
+    import my.body.exercise.cross_trainer as E
+    return E.dataframe()
