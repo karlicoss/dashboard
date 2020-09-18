@@ -42,11 +42,13 @@ jobs:
 
     - run: .ci/run
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: test-outputs
-        path: test-outputs/
+    # todo not sure if need considering that I'm uploading artifacts?
+    # - uses: actions/upload-artifact@v2
+    #   with:
+    #     name: test-outputs
+    #     path: test-outputs/
 
+    # TODO: only run for master pushes? not sure
     - name: Deploy plots
       uses: peaceiris/actions-gh-pages@v3
       with:
