@@ -42,7 +42,15 @@ def main():
             'statsmodels',
         ],
         extras_require={
-            'testing': ['pytest', 'hypothesis', 'faker'],
+            'testing': [
+                'pytest',
+                'hypothesis',
+                'faker',
+
+                'HPI @ git+https://github.com/karlicoss/HPI',
+                # uncomment to use local HPI
+                # 'HPI @ git+file:///DUMMY/path/to/local/hpi@branch',
+            ],
             'linting': ['pytest', 'hypothesis', 'mypy'],
         },
     )

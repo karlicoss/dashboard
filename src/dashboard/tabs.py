@@ -98,6 +98,13 @@ def tabs() -> Iterable[Tab]:
         return P(DF())
     yield tab(rescuetime)
 
+    # I guess it's pretty convenient to keep tabs close
+    # maybe just mark some tabs as test tabs?
+    def fake_rescuetime():
+        import my.rescuetime as R
+        with R.fake_data(rows=100000):
+            return rescuetime()
+    yield tab(fake_rescuetime)
 
     error_test_tab = Tab(
         name='error_handling_test',
