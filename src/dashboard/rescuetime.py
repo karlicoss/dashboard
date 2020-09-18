@@ -41,7 +41,12 @@ def plot_rescuetime(df):
         p.quad(source=CDS(df), top='top', bottom='bottom', left='left', right='right', color='darkgreen', alpha='alpha')
         top = 26 * 60
         set_hhmm_axis(p.yaxis, mint=0, maxt=top, period=60)
-        add_daysoff(p, dates=df['dt'].dt.date, bottom=0, top=top)
+        # FIXME make non-defensive, this is only temporary for tests
+        try:
+            add_daysoff(p, dates=df['dt'].dt.date, bottom=0, top=top)
+        except Exception as e:
+            import logging
+            logging.exception(e)
         p.legend.click_policy = 'hide'
 
 
@@ -69,3 +74,11 @@ def plot_rescuetime(df):
 # from bokeh.models import LinearColorMapper
 # mapper = LinearColorMapper(palette=colors, low=0, high=3600)
 # transform('duration_s', mapper))
+
+
+def test_rescuetime():
+    # meh. a bit recursive, but ok for now.. maybe really tabs definitions belong to specific files?
+    from .tabs import tabs
+    [rt] = [t for t in tabs() if t.name == 'fake_rescuetime']
+    # todo save it too?
+    rt.plotter()
