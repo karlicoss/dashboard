@@ -101,6 +101,16 @@ def tabs() -> Iterable[Tab]:
     # I guess it's pretty convenient to keep tabs close
     # maybe just mark some tabs as test tabs?
     def fake_rescuetime():
+        # todo ugh. annoying that we need this boilerplate..
+        # otherwise it would fail when the module is imported
+        # todo document that in the github issue?
+        from my.cfg import config
+        class user_config:
+            export_path = []
+        # need to check.. othewise it will overwrite the actual config..
+        if not hasattr(config, 'rescuetime'):
+            setattr(config, 'rescuetime', user_config)
+
         import my.rescuetime as R
         with R.fake_data(rows=100000):
             return rescuetime()
