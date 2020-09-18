@@ -50,6 +50,9 @@ def main():
                 'HPI @ git+https://github.com/karlicoss/HPI',
                 # uncomment to use local HPI
                 # 'HPI @ git+file:///DUMMY/path/to/local/hpi@branch',
+
+                # HPI modules dependencies
+                'rescuexport @ git+https://github.com/karlicoss/rescuexport',
             ],
             'linting': ['pytest', 'hypothesis', 'mypy'],
         },

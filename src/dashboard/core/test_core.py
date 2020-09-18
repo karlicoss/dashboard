@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Dict, Any
 
 import pandas as pd
 import numpy as np
@@ -27,20 +28,27 @@ def hash_df(df) -> str:
 
 def save_plot(plot, name: str):
     from pathlib import Path
-    suf = Path(name).suffix
+    base = Path('test-outputs')
+    path = base / Path(name)
+    path.parent.mkdir(exist_ok=True, parents=True)
+    suf = path.suffix
     if suf == '.html':
         from bokeh.io import output_file, save
-        output_file(name, title='hello', mode='inline', root_dir=None)
+        output_file(str(path), title='hello', mode='inline', root_dir=None)
         save(plot)
     elif suf == '.png':
-        # TODO sigh.. seems that png export is way too wlow
+        # todo sigh.. seems that png export is way too slow
         from bokeh.io import export_png
-        export_png(plot, filename=name)
+        export_png(plot, filename=str(path))
     else:
         raise RuntimeError(name, suf)
 
+SETTINGS: Dict[str, Any] = dict(
+    derandomize=True, # I want deterministic..
+    deadline=None, # saving timings might end up very different
+)
 
-@settings(derandomize=True)
+@settings(**SETTINGS)
 @given(data_frames(
     columns=columns(['value'], dtype=float),
     rows=st.tuples(
@@ -55,13 +63,14 @@ def test_rolling(df):
     df.index.rename('x', inplace=True) # meh. by default index doesn't have name..
     r= rolling(x='x', y='value', df=df, avgs=[2, 5], legend_label='test')
     [g, g2, g5] = r
-    save_plot(r.layout, 'res.html')
+    # todo need different numbers for each test
+    save_plot(r.layout, 'test_rolling.html')
 
 
 # todo meh, there must be a better way?
 _count = 0
 
-@settings(derandomize=True, max_examples=10)
+@settings(**SETTINGS, max_examples=10)
 @given(data_frames(
     index=range_indexes(min_size=10),
     columns=[
@@ -106,6 +115,6 @@ def test_rolling_errors(df):
     r.figure.legend.click_policy = 'hide'
 
     # todo saving takes a while.. maybe make it configurable?
-    save_plot(r.layout, name=f'out/{_count}.html')
+    save_plot(r.layout, name=f'rolling_errors_{_count}.html')
 # TODO somehow reuse these for 'demo' tabs?
 # TODO test when too many errors? title overfills and the plot collapses to zero
