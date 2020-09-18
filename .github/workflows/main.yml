@@ -40,7 +40,19 @@ jobs:
     # uncomment for SSH debugging
     # - uses: mxschmitt/action-tmate@v2
 
-    - run: scripts/ci/run
+    - run: .ci/run
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: test-outputs
+        path: test-outputs/
+
+    - name: Deploy plots
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./test-outputs
+          # todo keep_files? if I create a demo page or something
 
   # for now isn't needed
   # pypi:

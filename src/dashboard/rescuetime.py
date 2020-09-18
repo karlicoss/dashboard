@@ -77,8 +77,10 @@ def plot_rescuetime(df):
 
 
 def test_rescuetime():
+    from .core.test_core import save_plot
     # meh. a bit recursive, but ok for now.. maybe really tabs definitions belong to specific files?
     from .tabs import tabs
     [rt] = [t for t in tabs() if t.name == 'fake_rescuetime']
     # todo save it too?
-    rt.plotter()
+    f = rt.plotter()
+    save_plot(f, name='rescuetime.html')
