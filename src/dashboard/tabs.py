@@ -35,15 +35,11 @@ def tabs() -> Iterable[Tab]:
         plotter=plot_blood,
     )
 
-    def plot_sleep():
-        from .data import sleep_dataframe
-        from .sleep import plot_all_sleep
-        return plot_all_sleep(sleep_dataframe())
+    def sleep_all():
+        from .sleep import plot_sleep_all as P
+        return P()
 
-    yield Tab(
-        name='sleep',
-        plotter=plot_sleep
-    )
+    yield tab(sleep_all)
 
     def sleep_correlations():
         from .data import sleep_dataframe
@@ -93,28 +89,9 @@ def tabs() -> Iterable[Tab]:
 
 
     def rescuetime():
-        from .data import rescuetime_dataframe as DF
         from .rescuetime import plot_rescuetime as P
-        return P(DF())
+        return P()
     yield tab(rescuetime)
-
-    # I guess it's pretty convenient to keep tabs close
-    # maybe just mark some tabs as test tabs?
-    def fake_rescuetime():
-        # todo ugh. annoying that we need this boilerplate..
-        # otherwise it would fail when the module is imported
-        # todo document that in the github issue?
-        from my.cfg import config
-        class user_config:
-            export_path = []
-        # need to check.. othewise it will overwrite the actual config..
-        if not hasattr(config, 'rescuetime'):
-            setattr(config, 'rescuetime', user_config)
-
-        import my.rescuetime as R
-        with R.fake_data(rows=100000):
-            return rescuetime()
-    yield tab(fake_rescuetime)
 
     error_test_tab = Tab(
         name='error_handling_test',

@@ -22,7 +22,13 @@ def add_daysoff(plot, *, dates, bottom=0, top=80):
     days_2 = pd.date_range(start=mind, end=maxd, freq='D')
     days_2.name = 'date'
 
-    import my.calendar.holidays as holidays
+    # FIXME make non-defensive, this is only temporary for tests
+    try:
+        import my.calendar.holidays as holidays
+    except Exception as e:
+        import logging
+        logging.exception(e)
+        return
 
     col_df = pd.DataFrame(index=days_2, columns=['color'])
     def calc_color(row):

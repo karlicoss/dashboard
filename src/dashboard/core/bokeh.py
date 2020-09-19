@@ -355,10 +355,13 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
     if len(df) == 0:
         # add a fake point, so at least plotting doesn't fail...
         df = pd.DataFrame([{
-            x: datetime.fromtimestamp(0),
+            x: datetime(year=2000, month=1, day=1),
             y: 0.0,
         }]).set_index(x)
         avgs = ['3D' for _ in avgs]
+        # FIXME need to add this to errors as well, or at least title..
+        # TODO need to add a better placholder, timestamp 0 really messes things up
+        warnings.warn(f'No data points for {df}, emtpy plot!')
 
     plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
     for period in avgs:
