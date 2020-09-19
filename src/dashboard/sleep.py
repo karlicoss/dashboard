@@ -23,7 +23,7 @@ def _sleep_df(df):
 
 
 # TODO def need to run tests against sleep frames
-def plot_sleep(df):
+def _plot_sleep(df):
     df = _sleep_df(df)
     dates = df.index
 
@@ -137,7 +137,7 @@ def plot_sleep_bedtime(df):
 
 
 # todo woudl be nice to hightlight hovered datapoints??
-def plot_all_sleep(df):
+def _plot_all_sleep(df):
     # TODO meh
     dates = _sleep_df(df).index
 
@@ -149,7 +149,7 @@ def plot_all_sleep(df):
     p1.legend.location = "top_left"
     # todo ok, this is nice.. maybe make it the default somehow?
 
-    r2 = plot_sleep(df=df)
+    r2 = _plot_sleep(df=df)
     p2 = r2.figure
     p2.legend.orientation = "horizontal"
     p2.legend.location = "top_left"
@@ -238,3 +238,20 @@ def plot_sleep_correlations(df):
     # gridmatrix code? https://github.com/holoviz/holoviews/blob/5deb4a7b7f04f989fcc39bb06e657e8b6dfb4ea2/holoviews/operation/element.py#L997
     # TODO date slider? to hightligh changes over dates E.g. left-right
     # TODO show dates on tooltips
+
+
+def plot_sleep_all():
+    from .data import sleep_dataframe as DF
+    return _plot_all_sleep(DF())
+
+
+def plot_sleep_all_fake():
+    from .data import fake_emfit, fake_jawbone
+    with fake_emfit(nights=1000), fake_jawbone():
+        return plot_sleep_all()
+
+# todo make_test function?
+def test_sleep_all():
+    from .core.test_core import save_plot
+    f = plot_sleep_all_fake()
+    save_plot(f, name='sleep.html')

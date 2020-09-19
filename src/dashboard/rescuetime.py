@@ -8,7 +8,7 @@ from .misc import add_daysoff
 
 
 # todo add 'activity'? or break down and color by it??
-def plot_rescuetime(df):
+def _plot_rescuetime(df):
     # TODO figure out timezone in DAL
     def mins(dt):
         return dt.hour * 60 + dt.minute
@@ -41,12 +41,7 @@ def plot_rescuetime(df):
         p.quad(source=CDS(df), top='top', bottom='bottom', left='left', right='right', color='darkgreen', alpha='alpha')
         top = 26 * 60
         set_hhmm_axis(p.yaxis, mint=0, maxt=top, period=60)
-        # FIXME make non-defensive, this is only temporary for tests
-        try:
-            add_daysoff(p, dates=df['dt'].dt.date, bottom=0, top=top)
-        except Exception as e:
-            import logging
-            logging.exception(e)
+        add_daysoff(p, dates=df['dt'].dt.date, bottom=0, top=top)
         p.legend.click_policy = 'hide'
 
 
@@ -75,12 +70,19 @@ def plot_rescuetime(df):
 # mapper = LinearColorMapper(palette=colors, low=0, high=3600)
 # transform('duration_s', mapper))
 
+def plot_rescuetime():
+    from .data import rescuetime_dataframe as DF
+    return _plot_rescuetime(DF())
 
+
+def plot_fake_rescuetime():
+    from .data import fake_rescuetime
+    with fake_rescuetime(rows=100000):
+        return plot_rescuetime()
+
+
+# todo use a pytest fixture to save plots?
 def test_rescuetime():
     from .core.test_core import save_plot
-    # meh. a bit recursive, but ok for now.. maybe really tabs definitions belong to specific files?
-    from .tabs import tabs
-    [rt] = [t for t in tabs() if t.name == 'fake_rescuetime']
-    # todo save it too?
-    f = rt.plotter()
+    f = plot_fake_rescuetime()
     save_plot(f, name='rescuetime.html')

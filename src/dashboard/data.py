@@ -2,8 +2,10 @@
 # ideally here we keep this file as decoupled from the presentation as possible
 # so it's possible to use with any rendering framework, or even without rendering
 
+from contextlib import contextmanager
 from functools import lru_cache
 from itertools import islice
+from pathlib import Path
 
 
 @lru_cache()
@@ -77,3 +79,55 @@ def cross_trainer_dataframe():
 def rescuetime_dataframe():
     import my.rescuetime as R
     return R.dataframe()
+
+
+# kwargs are attributes
+def hack_config(name: str, **kwargs):
+    # todo ugh. annoying that we need this boilerplate..
+    # otherwise it would fail when the module is imported
+    # todo document that in the github issue?
+    from my.cfg import config
+    class user_config:
+        pass
+    for k, v in kwargs.items():
+        setattr(user_config, k, v)
+    # need to check.. othewise it will overwrite the actual config..
+    if not hasattr(config, name):
+        setattr(config, name, user_config)
+
+
+@contextmanager
+def fake_rescuetime(*args, **kwargs):
+    hack_config('rescuetime', export_path=[])
+
+    import my.rescuetime as M
+    with M.fake_data(*args, **kwargs):
+        yield
+
+
+@contextmanager
+def fake_emfit(*args, **kwargs):
+    import pytz
+    # todo get rid of timezone
+    # todo get rid of excluded_sids, that should be hacked via the config
+    hack_config('emfit', export_path=[], timezone=pytz.timezone('Europe/London'), excluded_sids=[])
+
+    import my.emfit as M
+    with M.fake_data(*args, **kwargs):
+        yield
+
+@contextmanager
+def fake_jawbone(*args, **kwargs):
+    # todo eh, it's using something else?
+    hack_config('jawbone', export_path=[], export_dir=Path('/whatever'))
+
+    import my.jawbone as M
+    try:
+        M.load_sleeps = lambda: []
+        yield
+    finally:
+        from importlib import reload
+        # that way we revert tmp config change?
+        reload(M)
+
+# todo maybe this ^^ also belongs to HPI?
