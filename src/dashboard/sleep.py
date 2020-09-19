@@ -195,6 +195,7 @@ def _plot_all_sleep(df):
     # yeah.. visually figuring out the holiday-non holiday difference is impossible
 
 
+# todo extract correlations in a separate file?
 def plot_sleep_correlations(df):
     # todo add holiday/non-holiday? or days from holiday? could be interesting
     # TODO remove hardcoding
