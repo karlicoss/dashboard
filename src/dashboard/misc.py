@@ -15,7 +15,7 @@ def add_daysoff(plot, *, dates, bottom=0, top=80):
     maxd = max(dates)
     day = timedelta(1)
 
-    # TODO need to keep boundary (-0.5, 0.5)?
+    # TODO need to keep boundary (-0.5, 0.5)? .. or it's automatic??
     days = list(np.arange(mind, maxd, day))
     # TODO make a dataframe with it??
 
@@ -39,13 +39,20 @@ def add_daysoff(plot, *, dates, bottom=0, top=80):
 
     col_df['color'] = col_df.apply(calc_color, axis=1)
 
+    # right... nice thing about this is that it's infinite to the top and bottom...
+    # but I have no clue how to make them togglable...
+    # from bokeh.models import BoxAnnotation
+    # for d, row in col_df.iterrows():
+    #     ann = BoxAnnotation(left=d, right=d + day, fill_alpha=0.1, fill_color=row['color'])
+    #     plot.add_layout(ann)
+
     # https://stackoverflow.com/a/56258632/706389
     # todo box annotation vs vbar??
     return plot.vbar(
         source=CDS(col_df),
         x='date',
         color='color',
-        width=timedelta(1),
+        width=day,
         bottom=bottom,
         top=top,
         alpha=0.05,
