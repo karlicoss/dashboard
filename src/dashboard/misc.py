@@ -4,18 +4,26 @@ from bokeh.models import ColumnDataSource as CDS
 import numpy as np
 import pandas as pd
 
+from .core.bokeh import guess_range
+
 
 # NOTE: vbar is _centered_ at the corresponding x
 # TODO add reason? e.g. travel/public holiday/weekend?
-def add_daysoff(plot, *, dates, bottom=0, top=80):
-    # print(p.y_range.computed_range)
-    # TODO not sure how to figure out min/max date automatically??
-    # FIXME align to day boundary?
-    mind = min(dates)
-    maxd = max(dates)
+def add_daysoff(plot, *, dates=None, bottom=None, top=None):
+    if bottom is None or top is None:
+        b, t = guess_range(plot, axis='y')
+        # todo how to extend the range a bit so there is some leeway?
+        bottom = bottom or b
+        top    = top    or t
+
+    if dates is None:
+        mind, maxd = guess_range(plot, axis='x')
+    else:
+        mind = min(dates)
+        maxd = max(dates)
     day = timedelta(1)
 
-    # TODO need to keep boundary (-0.5, 0.5)? .. or it's automatic??
+    # todo need to keep boundary (-0.5, 0.5)? .. or it's automatic??
     days = list(np.arange(mind, maxd, day))
     # TODO make a dataframe with it??
 

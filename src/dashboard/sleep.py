@@ -25,7 +25,6 @@ def _sleep_df(df):
 # TODO def need to run tests against sleep frames
 def _plot_sleep(df):
     df = _sleep_df(df)
-    dates = df.index
 
     # TODO https://github.com/bokeh/bokeh/blob/master/examples/app/sliders.py
 
@@ -35,10 +34,7 @@ def _plot_sleep(df):
     g7 .glyph.line_width = 2
     g30.glyph.line_color = 'lightblue'
     g30.glyph.line_width = 2
-
     p = r.figure
-    # TODO not sure about adding before vs after
-    add_daysoff(p, dates=dates)
 
     p.extra_y_ranges = {'resp': Range1d(start=10, end=25)}
     # Addi the second axis to the plot.
@@ -61,6 +57,7 @@ def _plot_sleep(df):
         context=r,
     )
     # TODO hmm, it appends error twice? not sure about it...
+    add_daysoff(p)
     return r
 
 # todo always set output_file("xx.html")? so the latest html is always dumped?
@@ -70,7 +67,6 @@ def _plot_sleep(df):
 # todo think of better naming
 def plot_sleep_hrv(df):
     df = _sleep_df(df)
-    dates = df.index
 
     # TODO some hrv evening points are right at zero? careful, maybe worth filtering..
     rm = rolling(df=df, x='date', y='hrv_morning', color='green' )
@@ -82,7 +78,7 @@ def plot_sleep_hrv(df):
     g30.glyph.line_width = 2
 
     r = rm
-    add_daysoff(r.figure, dates=dates)
+    add_daysoff(r.figure)
 
     r.figure.legend.click_policy = 'hide'
     return r
@@ -100,33 +96,32 @@ def _mins(tt):
 
 def plot_sleep_intervals(df):
     df = _sleep_df(df)
-    dates = df.index
 
     ints  = df[['sleep_start', 'sleep_end']].applymap(lambda dt: None if pd.isnull(dt) else _mins(dt.time()))
     # todo maybe instead plot angled lines? then won't need messing with minutes at all? Although still useful to keep
     p = date_figure()
     mint = _mins(time(22, 0))
     maxt = _mins(time(11, 0))
-    add_daysoff(p, bottom=mint, top=maxt, dates=dates)
     # TODO need to handle nans/errors?
     p.vbar(source=CDS(ints), x='date', width=timedelta(1), bottom='sleep_start', top='sleep_end', color='black', alpha=0.1)
 
     from .core.bokeh import set_hhmm_axis
+    # TODO also guess mint/maxt?
     set_hhmm_axis(p.yaxis, mint=mint, maxt=maxt)
 
+    add_daysoff(p)
     p.legend.click_policy = 'hide'
     return p
 
 
 def plot_sleep_bedtime(df):
     df = _sleep_df(df)
-    dates = df.index
 
     r = rolling(df=df, x='date', y='bed_time', color='green' )
     [g, g7, g30] =r
     g7 .glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
-    add_daysoff(r.figure, dates=dates)
+    add_daysoff(r.figure)
 
     # todo how to make this a default?
     r.figure.legend.click_policy = 'hide'
@@ -138,9 +133,6 @@ def plot_sleep_bedtime(df):
 
 # todo woudl be nice to hightlight hovered datapoints??
 def _plot_all_sleep(df):
-    # TODO meh
-    dates = _sleep_df(df).index
-
     from .core.bokeh import date_slider
 
     r1 = plot_sleep_bedtime(df=df)

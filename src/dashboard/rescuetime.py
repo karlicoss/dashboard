@@ -41,7 +41,7 @@ def _plot_rescuetime(df):
         p.quad(source=CDS(df), top='top', bottom='bottom', left='left', right='right', color='darkgreen', alpha='alpha')
         top = 26 * 60
         set_hhmm_axis(p.yaxis, mint=0, maxt=top, period=60)
-        add_daysoff(p, dates=df['dt'].dt.date, bottom=0, top=top)
+        add_daysoff(p)
         p.legend.click_policy = 'hide'
 
 
