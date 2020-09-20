@@ -607,3 +607,40 @@ def set_hhmm_axis(axis, *, mint: int, maxt: int, period: int=30) -> None:
         if (mm.length == 1) mm = "0" + mm;
         return `${hh}:${mm}`
     """)
+
+
+def guess_range(plot, *, axis: str):
+    assert axis in {'x', 'y'}, axis
+    mins = []
+    maxs = []
+    # todo extract helper to guess miny, maxy?
+    graphs = plot.renderers
+    for g in graphs:
+        glyph = g.glyph
+        name = getattr(glyph, axis, None)
+        if name is None:
+            if axis == 'y':
+                # TODO assumes bar plot.. careful
+                minname, maxname = glyph.bottom, glyph.top
+            else:
+                minname, maxname = glyph.left  , glyph.right
+        else:
+            minname, maxname = name, name
+        # note: name was qual to 447.0 at some point (sleep plot). no idea what it means..
+        # TODO nan might be the wrong type for datetime etc.
+        minvals = g.data_source.data.get(minname, [np.nan])
+        maxvals = g.data_source.data.get(maxname, [np.nan])
+        mins.append(np.nanmin(minvals))
+        maxs.append(np.nanmax(maxvals))
+    if len(mins) == 0:
+        mins = [np.nan]
+    if len(maxs) == 0:
+        maxs = [np.nan]
+    mn = np.nanmin(mins)
+    mx = np.nanmax(maxs)
+    if np.isnan(mn):
+        mn = 100.0 # TODO might not be numeric..
+    if np.isnan(mx):
+        mx = 0.0
+    # todo not sure what's a good value to fallback?
+    return (mn, mx)
