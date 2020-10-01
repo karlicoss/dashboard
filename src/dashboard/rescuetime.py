@@ -82,7 +82,7 @@ def plot_fake_rescuetime():
 
 
 # todo use a pytest fixture to save plots?
-def test_rescuetime():
+def test_rescuetime() -> None:
     from .core.test_core import save_plot
     f = plot_fake_rescuetime()
     save_plot(f, name='rescuetime.html')
