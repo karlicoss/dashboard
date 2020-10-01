@@ -61,9 +61,8 @@ def tabs() -> Iterable[Tab]:
     yield tab(weight_test)
 
     def running():
-        from .data import endomondo_dataframe as DF
         from .cardio import plot_running as P
-        return P(DF())
+        return P()
     yield tab(running)
 
     def spinning():

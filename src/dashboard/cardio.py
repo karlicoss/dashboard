@@ -3,7 +3,7 @@ from bokeh.layouts import column
 from .core.bokeh import rolling, date_figure
 
 
-def plot_running(df):
+def _plot_running(df):
     df = df.set_index('start_time')
 
     rdf = df[df['sport'].str.contains('Running')]
@@ -121,3 +121,20 @@ def plot_cardio_volume(df):
     return r.layout
 # note: old dashboard -- ok, plotting just endomondo stuff with old dashboard using kcal as volume proxy, matches very closely
 # TODO would be interesting to add BMR as a third plot? or just add to total somhow..
+
+
+def plot_running():
+    from .data import endomondo_dataframe as DF
+    return _plot_running(DF())
+
+
+def plot_fake_running():
+    from .data import fake_endomondo
+    with fake_endomondo(count=100):
+        return plot_running()
+
+
+def test_running() -> None:
+    from .core.test_core import save_plot
+    f = plot_fake_running()
+    save_plot(f, name='running.html')

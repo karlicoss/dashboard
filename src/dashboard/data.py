@@ -130,4 +130,21 @@ def fake_jawbone(*args, **kwargs):
         # that way we revert tmp config change?
         reload(M)
 
+
+@contextmanager
+def fake_sleep(*args, **kwargs):
+    with fake_emfit(nights=1000), fake_jawbone():
+        yield
+
+
+@contextmanager
+def fake_endomondo(*args, **kwargs):
+    # todo hmm, when using export_path=[] here, getting
+    # had an error ValueError: mutable default <class 'list'> for field export_path is not allowed: use default_factory
+    hack_config('endomondo', export_path=())
+
+    import my.endomondo as M
+    with M.fake_data(*args, **kwargs):
+        yield
+
 # todo maybe this ^^ also belongs to HPI?

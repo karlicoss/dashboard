@@ -55,6 +55,7 @@ def main():
                 # HPI modules dependencies
                 'rescuexport @ git+https://github.com/karlicoss/rescuexport',
                 'emfitexport @ git+https://github.com/karlicoss/emfitexport',
+                'endoexport  @ git+https://github.com/karlicoss/endoexport' ,
                 'matplotlib', # todo emfitexport dependency for now, get rid later
             ],
             'linting': ['pytest', 'hypothesis', 'mypy'],
