@@ -188,7 +188,7 @@ def _plot_all_sleep(df):
 
 
 # todo extract correlations in a separate file?
-def plot_sleep_correlations(df):
+def _plot_sleep_correlations(df):
     # todo add holiday/non-holiday? or days from holiday? could be interesting
     # TODO remove hardcoding
     # TODO seems that is simply omits non-numeric columns?? check the dimension of grid and warn
@@ -238,13 +238,31 @@ def plot_sleep_all():
     return _plot_all_sleep(DF())
 
 
+def plot_sleep_correlations():
+    from .data import sleep_dataframe as DF
+    return _plot_sleep_correlations(DF())
+
+
 def plot_sleep_all_fake():
-    from .data import fake_emfit, fake_jawbone
-    with fake_emfit(nights=1000), fake_jawbone():
+    from .data import fake_sleep
+    with fake_sleep():
         return plot_sleep_all()
 
+
+def plot_sleep_correlations_fake():
+    from .data import fake_sleep
+    with fake_sleep():
+        return plot_sleep_correlations()
+
+
 # todo make_test function?
-def test_sleep_all():
+def test_sleep_all() -> None:
     from .core.test_core import save_plot
     f = plot_sleep_all_fake()
     save_plot(f, name='sleep.html')
+
+
+def test_sleep_correlations():
+    from .core.test_core import save_plot
+    f = plot_sleep_correlations_fake()
+    save_plot(f, name='sleep_correlations.html')

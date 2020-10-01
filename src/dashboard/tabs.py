@@ -42,9 +42,8 @@ def tabs() -> Iterable[Tab]:
     yield tab(sleep_all)
 
     def sleep_correlations():
-        from .data import sleep_dataframe
         from .sleep import plot_sleep_correlations
-        return plot_sleep_correlations(sleep_dataframe())
+        return plot_sleep_correlations()
 
     yield tab(sleep_correlations)
 
