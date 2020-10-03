@@ -78,13 +78,17 @@ def tabs() -> Iterable[Tab]:
         return P(DF())
     yield tab(cross_trainer)
 
-
     def exercise_volume():
+        # FIXME need cardio dataframe?
         from .data import endomondo_dataframe as DF
         from .cardio import plot_cardio_volume as P
         return P(DF())
     yield tab(exercise_volume)
 
+    def sleep_vs_exercise():
+        from .combined import plot_sleep_vs_exercise as P
+        return P()
+    yield tab(sleep_vs_exercise)
 
     def rescuetime():
         from .rescuetime import plot_rescuetime as P
