@@ -80,6 +80,13 @@ def rescuetime_dataframe():
     import my.rescuetime as R
     return R.dataframe()
 
+@lru_cache
+def bluemaestro_dataframe():
+    from my.core.cachew import disabled_cachew
+    # TODO remove after tz handling in cachew is fixed
+    with disabled_cachew():
+        import my.bluemaestro as B
+        return B.dataframe()
 
 # kwargs are attributes
 def hack_config(name: str, **kwargs):

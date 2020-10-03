@@ -419,7 +419,8 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
         if 'datetime64' in str(dfy.index.dtype):
             # you're probably doing something wrong otherwise..
             # todo warn too?
-            assert str(period).endswith('D'), period
+            # check it's a valid period
+            pd.to_timedelta(period)
         dfa = dfy[dfy.index.notna()].rolling(period).mean()
         # TODO assert x in df?? or rolling wrt to x??
 

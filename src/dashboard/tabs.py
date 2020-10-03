@@ -95,6 +95,11 @@ def tabs() -> Iterable[Tab]:
         return P()
     yield tab(rescuetime)
 
+    def environment():
+        from .environment import plot_environment as P
+        return P()
+    yield tab(environment)
+
     error_test_tab = Tab(
         name='error_handling_test',
         plotter=lambda: "garbage",
