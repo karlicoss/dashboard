@@ -38,6 +38,16 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
         extra_opts.append(hv.opts.Histogram(frame_width=w1, frame_height=h1))
     ##
 
+    if len(df) == 0:
+        # otherwise hvplot.scatter_matrix fails
+        return hv.Text(
+            0.0,
+            0.0,
+            'ERROR: empty dataframe',
+            halign='left',
+        )
+
+
     # TODO hmm. seems that it magically removing all non-numeric data?
     # unfortunately, this might mess with labels... wonder if I need my custom impl after all...
     # I guess need to look in hvplot.gridmatrix code... definitely add a visual test for that...
@@ -57,15 +67,34 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
         # todo this would be need for plotly as well?
         import statsmodels.formula.api as smf # type: ignore
 
+        # todo what about non-numeric stuff?
+
         # GridMatrix is just a dict. nice!
         for k, plot in sm.items():
             xx, yy = k
             if xx == yy:
                 # diagonal thing, e.g. histogram
                 continue
-            # TODO definitely test nan behaviour for scatter_matrix...
 
-            dd = plot.data[[xx, yy]].dropna() # otherwise from_scatter fails
+            with pd.option_context('mode.use_inf_as_null', True):
+                dd = plot.data[[xx, yy]].dropna() # otherwise from_scatter fails
+            # todo would be nice to display stats on the number of points dropped
+
+            udd = dd.drop_duplicates()
+            if len(udd) <= 1:
+                # can't perform a reasonable regression then
+
+                # todo determine limits somehow??
+                # todo red color
+                text = hv.Text(
+                    0.0,
+                    0.0,
+                    'ERROR: no points to correlate',
+                    halign='left',
+                )
+                sm[k] = plot * text
+                continue
+
 
             res = smf.ols(f"{yy} ~ {xx}", data=dd).fit()
             intercept = res.params['Intercept']
@@ -85,21 +114,40 @@ def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs
             minx, maxx = min(dd[xx]), max(dd[xx])
             miny, maxy = min(dd[yy]), max(dd[yy])
             # todo font size dependent on width?? ugh.
-            text = hv.Text(
-                minx + (maxx - minx) * relx,
-                miny + (maxy - miny) * rely,
-                f"R2 = {r2:.4f}\n{yy} ~ {slope:.3f} {xx}",
-                halign='left',
-            )
+            #
             ##
+            txt = f'R2 = {r2:.4f}\n{yy} ~ {slope:.3f} {xx}'
 
             # todo need to add various regression properties, like intercept, etc
             # TODO hopefuly this overlays correctly?? not sure about nans, again
-            sl = hv.Slope.from_scatter(hv.Scatter((dd[xx], dd[yy]))).opts(color='red')
+            try:
+                sl = hv.Slope.from_scatter(hv.Scatter((dd[xx], dd[yy]))).opts(color='green')
+            except ValueError as ve:
+                dl_err = 'On entry to DLASCL parameter number 4 had an illegal value'
+                if dl_err not in str(ve):
+                    raise ve
+
+                sl = None
+                # https://github.com/statsmodels/statsmodels/issues/35966
+                txt += f'\nERROR: {dl_err}'
+
+            text = hv.Text(
+                minx + (maxx - minx) * relx,
+                miny + (maxy - miny) * rely,
+                txt,
+                halign='left',
+            )
+
             # just a sanity check.. not sure which one I should use?
             # sl2 = hv.Slope(slope, intercept).opts(color='green')
             # TODO ugh. title doesn't work??
-            sm[k] = plot * sl * text
+
+            rplot = plot
+            if sl is not None:
+                rplot *= sl
+            rplot *= text
+
+            sm[k] = rplot
 
             # wow! * (same plot) vs + (different plots) is pretty clever!
             # also I like how multiplication doesn't commute so the 'first' plot wins the layout parameters

@@ -6,7 +6,7 @@ import numpy as np
 
 from bokeh.plotting import figure
 
-from .bokeh import rolling, date_figure
+from .bokeh import rolling, date_figure, scatter_matrix
 
 from hypothesis import given, settings, assume, example
 from hypothesis.extra.pandas import columns, column, data_frames, range_indexes
@@ -118,3 +118,41 @@ def test_rolling_errors(df):
     save_plot(r.layout, name=f'rolling_errors_{_count}.html')
 # TODO somehow reuse these for 'demo' tabs?
 # TODO test when too many errors? title overfills and the plot collapses to zero
+
+
+
+# hmm max_examples isn't respected??
+# right, it's because of the 'shrinking mode' when it's searching for minimal example
+# https://hypothesis.works/articles/how-many-tests/#failing-tests
+
+
+import string
+@settings(**SETTINGS, max_examples=10)
+@given(data_frames(
+    columns=[
+        column('dt'    , dtype=datetime),
+        column('value1', dtype=float   ),
+        column('value2', dtype=float   ),
+        column('error' , dtype=str     ),
+    ],
+    rows=st.tuples(
+        st.datetimes(
+            min_value=datetime.strptime('20190101', '%Y%m%d'),
+            max_value=datetime.strptime('20200101', '%Y%m%d'),
+        ),
+        st.floats(allow_nan=True),
+        st.floats(allow_nan=True),
+        st.text(alphabet=string.ascii_letters),
+    ),
+))
+# @example(pd.DataFrame([
+#     dict(dt=None, value1=0.0, value2=0.0   , error=''),
+#     dict(dt=None, value1=0.0, value2=np.inf, error=''),
+# ]))
+def test_scatter_matrix(df):
+    # every other is an error
+    df[::2]['error'] = ''
+
+    sm = scatter_matrix(df)
+    import holoviews as hv
+    hv.render(sm)
