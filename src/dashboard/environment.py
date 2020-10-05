@@ -7,23 +7,42 @@ from .core.bokeh import rolling, date_slider as DS
 
 
 def _plot_environment(df):
+    # todo disable g by default
+    # TODO need to agree on more consistent colors..
     # todo should be fixed/asserted in hpi?
     df = df.sort_index()
-    res = rolling(x='dt', y='temp', df=df, color='blue', legend_label='Temperature', avgs=['10min', '1D'])
-    [g, g1h, g1d] = res.plots
-    # todo disable g by default
+    rt = rolling(x='dt', y='temp'    , df=df, color='red' , legend_label='Temperature', avgs=['10min', '1D'])
+    [g, g1h, g1d] = rt.plots
     g.glyph.marker = 'dot'
     g1h.glyph.line_width = 1
-    # TODO need to agree on more consistent colors..
+    g1d.glyph.line_color = 'darkred'
+    g1d.glyph.line_width = 1
+
+    rp = rolling(x='dt', y='pressure', df=df, color='grey', legend_label='Pressure'  , avgs=['10min', '1D'])
+    [g, g1h, g1d] = rp.plots
+    g.glyph.marker = 'dot'
+    g1h.glyph.line_width = 1
     g1d.glyph.line_color = 'black'
     g1d.glyph.line_width = 1
 
+    rh = rolling(x='dt', y='humidity', df=df, color='blue', legend_label='Humidity'  , avgs=['10min', '1D'])
+    [g, g1h, g1d] = rh.plots
+    g.glyph.marker = 'dot'
+    g1h.glyph.line_width = 1
+    g1d.glyph.line_color = 'darkblue'
+    g1d.glyph.line_width = 1
+
     # todo make it default, I always want this
-    res.figure.legend.click_policy = 'hide'
+    rt.figure.legend.click_policy = 'hide'
+    rp.figure.legend.click_policy = 'hide'
+    rh.figure.legend.click_policy = 'hide'
 
     return column([
-        DS(res.figure, date_column='dt'),
-        res.layout,
+        # todo display date slider for every layout?
+        DS(rt.figure, date_column='dt'),
+        rt.layout,
+        rp.layout,
+        rh.layout,
     ], sizing_mode='stretch_width')
 
 
