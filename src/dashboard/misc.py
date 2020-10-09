@@ -42,7 +42,7 @@ def add_daysoff(plot, *, dates=None, bottom=None, top=None):
     def calc_color(row):
         # todo separate column, abstract away
         dt = row.name
-        is_workday = holidays.is_working_day(dt)
+        is_workday = holidays.is_workday(dt)
         return 'blue' if is_workday else 'red'
 
     col_df['color'] = col_df.apply(calc_color, axis=1)
