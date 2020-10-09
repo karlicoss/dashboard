@@ -25,21 +25,10 @@ def locations_dataframe(limit=None):
     return df
 
 
-# todo just use directly?
 @lru_cache()
 def sleep_dataframe():
-    # TODO this should be done within HPI
-    import my.emfit as E
-    edf =  E.dataframe()
-
-    import my.jawbone as J
-    jdf =  J.dataframe()
-
-    # TODO add back 'src'??
-    import pandas as pd
-    mdf = pd.concat([jdf, edf])
-
-    return mdf
+    import my.body.sleep.main as S
+    return S.dataframe()
 
 
 @lru_cache()
