@@ -10,10 +10,9 @@ from pathlib import Path
 
 @lru_cache()
 def locations():
-    # todo import directly from google? not sure
-    from my.location import iter_locations
+    import my.location.google as G
     # todo islice something earlier?
-    return list(iter_locations())
+    return list(G.locations())
 
 
 @lru_cache()

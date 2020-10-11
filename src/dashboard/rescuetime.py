@@ -75,14 +75,11 @@ def plot_rescuetime():
     return _plot_rescuetime(DF())
 
 
-def plot_fake_rescuetime():
+def plot_rescuetime_fake():
     from .data import fake_rescuetime
     with fake_rescuetime(rows=100000):
         return plot_rescuetime()
 
 
-# todo use a pytest fixture to save plots?
-def test_rescuetime() -> None:
-    from .core.test_core import save_plot
-    f = plot_fake_rescuetime()
-    save_plot(f, name='rescuetime.html')
+from .core.tests import make_test
+test_rescuetime = make_test(plot_rescuetime_fake)

@@ -84,10 +84,7 @@ def plot_sleep_vs_exercise_fake():
         return plot_sleep_vs_exercise()
 
 
-def test_sleep_vs_exercise():
-    from .core.test_core import save_plot
-    f = plot_sleep_vs_exercise_fake()
-    save_plot(f, name='sleep_vs_exercise.html')
-
+from .core.tests import make_test
+test_sleep_vs_exercise = make_test(plot_sleep_vs_exercise_fake)
 
 # TODO for notebook: set package name 'dashboard'?

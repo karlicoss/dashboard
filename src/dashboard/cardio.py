@@ -128,13 +128,11 @@ def plot_running():
     return _plot_running(DF())
 
 
-def plot_fake_running():
+def plot_running_fake():
     from .data import fake_endomondo
     with fake_endomondo(count=100):
         return plot_running()
 
 
-def test_running() -> None:
-    from .core.test_core import save_plot
-    f = plot_fake_running()
-    save_plot(f, name='running.html')
+from .core.tests import make_test
+test_running = make_test(plot_running_fake)
