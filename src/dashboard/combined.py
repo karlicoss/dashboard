@@ -5,7 +5,9 @@ from datetime import timedelta
 
 from bokeh.models import HoverTool
 
-from .core.bokeh import scatter_matrix
+from .core.bokeh import scatter_matrix, rolling
+from .core.pandas import unlocalize, lag_df
+
 
 def _plot_sleep_vs_exercise(df):
     import holoviews as hv
