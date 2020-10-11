@@ -99,11 +99,26 @@ def hack_config(name: str, **kwargs):
 
 
 @contextmanager
+def no_bluemaestro():
+    # todo add some data later
+    hack_config('bluemaestro', export_path='')
+    yield
+
+
+@contextmanager
+def no_tz():
+    # todo use something more meaningful?
+    hack_config('google'  , takeout_path='')
+    hack_config('location', home=(51.5074, 0.1278))
+    yield
+
+
+@contextmanager
 def fake_rescuetime(*args, **kwargs):
     hack_config('rescuetime', export_path=[])
 
     import my.rescuetime as M
-    with M.fake_data(*args, **kwargs):
+    with M.fake_data(*args, **kwargs), no_tz():
         yield
 
 
@@ -135,7 +150,7 @@ def fake_jawbone(*args, **kwargs):
 
 @contextmanager
 def fake_sleep(*args, **kwargs):
-    with fake_emfit(nights=1000), fake_jawbone():
+    with fake_emfit(nights=1000), fake_jawbone(), no_bluemaestro(), no_tz():
         yield
 
 
