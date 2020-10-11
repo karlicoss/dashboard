@@ -17,8 +17,8 @@ def _sleep_df(df):
 
     # TODO ugh. figure out how pandas determines the index type..
     # todo not sure if I need this all?
+    # TODO should just unlocalize?
     df.index = pd.to_datetime(df.index, utc=True)
-
     return df
 
 

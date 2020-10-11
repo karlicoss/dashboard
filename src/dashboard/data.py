@@ -33,7 +33,11 @@ def sleep_dataframe():
 @lru_cache()
 def sleepiness_dataframe():
     import my.body.sleep.sleepiness as S
-    return S.dataframe()
+    df = S.dataframe()
+    # TODO not sure if should do it here?
+    # TODO stick nans closer to the original positions?
+    df = df.set_index('dt').sort_index()
+    return df
 
 
 @lru_cache()
