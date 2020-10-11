@@ -1,3 +1,5 @@
+from . import nicename
+
 from pathlib import Path
 
 
@@ -19,12 +21,7 @@ def save_plot(plot, name: str):
 
 
 def make_test(plot_factory):
-    name = plot_factory.__name__
-    if name.endswith('_fake'):
-        name = name[:-5]
-    if name.startswith('plot_'):
-        name = name[5:]
-
+    name = nicename(plot_factory.__name__)
     def test() -> None:
         p = plot_factory()
         save_plot(p, name=f'{name}.html')

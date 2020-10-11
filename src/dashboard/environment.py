@@ -4,6 +4,7 @@ from bokeh.layouts import column
 from bokeh.models import ColumnDataSource as CDS
 
 from .core.bokeh import rolling, date_slider as DS
+from .core import tab
 
 
 def _plot_environment(df):
@@ -49,6 +50,7 @@ def _plot_environment(df):
 # TODO highlight different days?
 # TODO holidays/non-home timezones would def be nice
 
+@tab
 def plot_environment():
     from .data import bluemaestro_dataframe as DF
     df = DF()
