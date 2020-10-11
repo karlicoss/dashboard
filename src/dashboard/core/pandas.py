@@ -95,4 +95,4 @@ def lag_df(*, x, y, deltas):
 
 def unlocalize(s):
     # TODO maybe do some extra checks?
-    return s.apply(lambda d: d.replace(tzinfo=None))
+    return s.map(lambda d: d.replace(tzinfo=None))
