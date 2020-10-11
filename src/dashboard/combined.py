@@ -78,6 +78,7 @@ def plot_sleep_vs_exercise():
     return _plot_sleep_vs_exercise(df)
 
 
+# todo use a helper for combined fake data?
 def plot_sleep_vs_exercise_fake():
     from .data import fake_sleep, fake_endomondo
     with fake_endomondo(count=100), fake_sleep():

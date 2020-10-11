@@ -1,7 +1,7 @@
 from datetime import date, timedelta, datetime
 from itertools import cycle
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Sequence, Union
 import warnings
 
 from bokeh.layouts import gridplot, column
@@ -216,8 +216,12 @@ class RollingResult:
 # test for it, also add to docs.
 # this should def be common with plotly
 
+# None is treated as 'omit' the scatter plot
+# todo not sure about that though... maybe better to control on the call sites?
+Avg = Optional[Union[str, int]]
+
 # todo better name? also have similar function for plotly
-def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, context: Optional[RollingResult]=None, **kwargs) -> RollingResult:
+def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_label=None, context: Optional[RollingResult]=None, **kwargs) -> RollingResult:
     # todo should copy df first??
     if legend_label is None:
         legend_label = y
@@ -411,16 +415,20 @@ def rolling(*, x: str, y: str, df, avgs=['7D', '30D'], legend_label=None, contex
         # TODO need to add a better placholder, timestamp 0 really messes things up
         warnings.warn(f'No data points for {df}, empty plot!')
 
-    plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
-    for period in avgs:
+    if None not in avgs:
+        plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
+    for period in [a for a in avgs if a is not None]:
         dfy = df[[y]]
         if str(dfy.index.dtype) == 'object':
-            warnings.warn("Index type is 'object'. You're likely doing something wrong")
+            # todo log instead?
+            logging.error(f"{dfy.dtypes}: index type is 'object'. You're likely doing something wrong")
         if 'datetime64' in str(dfy.index.dtype):
             # you're probably doing something wrong otherwise..
             # todo warn too?
             # check it's a valid period
             pd.to_timedelta(period)
+        # TODO how to fill the missing values??
+        # a sequence of consts would be a good test for it
         dfa = dfy[dfy.index.notna()].rolling(period).mean()
         # TODO assert x in df?? or rolling wrt to x??
 
