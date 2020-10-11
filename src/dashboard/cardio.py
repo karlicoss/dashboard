@@ -1,6 +1,7 @@
 from bokeh.layouts import column
 
 from .core.bokeh import rolling, date_figure
+from .core import tab
 
 
 def _plot_running(df):
@@ -44,7 +45,7 @@ def _plot_running(df):
 # TODO would be cool to display all HR plots on the same page? not sure how to align them properly though
 
 
-def plot_spinning(df):
+def _plot_spinning(df):
     # TODO do it on the DF level?
     df = df.set_index('start_time')
 
@@ -58,9 +59,15 @@ def plot_spinning(df):
 # TODO merge in manual descriptions, attach interval information
 
 
+@tab
+def plot_spinning():
+    from .data import endomondo_dataframe as DF
+    return _plot_spinning(DF())
+
+
 # TODO pay attention at warnings from the old dashboard
 # todo 2019-05-23 -- single endomondo item error
-def plot_cross_trainer(df):
+def _plot_cross_trainer(df):
     df = df.set_index('start_time')
 
     # HPI: generally, make sure all types are explicitly numeric/dateish apart from the exceptions?
@@ -89,9 +96,14 @@ def plot_cross_trainer(df):
 # TODO plot with all cardio exercise? not sure if would make much sense. but a table probable would..
 # TODO rolling: check that columns types are numeric? otherwise get weird errors
 
+@tab
+def plot_cross_trainer():
+    from .data import cross_trainer_dataframe as DF
+    return _plot_cross_trainer(DF())
+
 
 # todo display breakdown by sport as well?
-def plot_cardio_volume(df):
+def _plot_cardio_volume(df):
     # todo not sure ... should it always copy??
     df = df.copy()
     df = df.set_index('start_time')
@@ -122,7 +134,14 @@ def plot_cardio_volume(df):
 # note: old dashboard -- ok, plotting just endomondo stuff with old dashboard using kcal as volume proxy, matches very closely
 # TODO would be interesting to add BMR as a third plot? or just add to total somhow..
 
+@tab
+def plot_cardio_volume():
+    # FIXME cardio dataframe?
+    from .data import endomondo_dataframe as DF
+    return _plot_cardio_volume(DF())
 
+
+@tab
 def plot_running():
     from .data import endomondo_dataframe as DF
     return _plot_running(DF())

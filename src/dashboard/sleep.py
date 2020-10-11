@@ -2,6 +2,7 @@ from datetime import timedelta, time
 
 from .misc import add_daysoff
 from .core.bokeh import rolling, date_figure
+from .core import tab
 
 
 from bokeh.models import ColumnDataSource as CDS
@@ -229,11 +230,13 @@ def _plot_sleep_correlations(df):
     # TODO show dates on tooltips
 
 
+@tab
 def plot_sleep_all():
     from .data import sleep_dataframe as DF
     return _plot_all_sleep(DF())
 
 
+@tab
 def plot_sleep_correlations():
     from .data import sleep_dataframe as DF
     return _plot_sleep_correlations(DF())

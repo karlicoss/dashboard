@@ -2,6 +2,7 @@ import pandas as pd # type: ignore
 
 from .core.bokeh import rolling, date_figure
 from .core.bokeh import date_slider as DS
+from .core import tab
 
 # TODO dataframe stubs would be useful
 
@@ -12,7 +13,7 @@ from .core.bokeh import date_slider as DS
 # good dynamic/safety balance. we benefit from the same Exception type without introducing extra restrictions
 # on the other hand, if the attribute is unhandled, there is always a visual hint in the exception string
 
-
+@tab
 def plot_weight(df=None):
     # todo need dataframe type
     if df is None:
@@ -80,6 +81,9 @@ def fake_weight_data():
     return df
 
 
-# todo not sure if should/can keep tests close?
-def test_plot_weight():
+def plot_weight_fake():
     return plot_weight(fake_weight_data())
+
+
+from .core.tests import make_test
+test_plot_weight = make_test(plot_weight_fake)

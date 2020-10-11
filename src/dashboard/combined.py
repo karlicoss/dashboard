@@ -7,6 +7,7 @@ from bokeh.models import HoverTool
 
 from .core.bokeh import scatter_matrix, rolling
 from .core.pandas import unlocalize, lag_df
+from .core import tab
 
 
 def _plot_sleep_vs_exercise(df):
@@ -31,7 +32,7 @@ class C:
 
 
 # FIXME error handling
-# todo add sleepiness, mental state and dreams (I guess to the main sleep df)
+@tab
 def plot_sleep_vs_exercise():
     # TODO compute some automatic holiday/weekend correlation
     # maybe, e.g. 'days off within the last 5 days'? or some sort of discounting?

@@ -17,6 +17,11 @@ def render_tab(*, tab: Tab, filename: Path):
 
 def run(to: Path, tab_name: Optional[str]=None, debug: bool=False) -> Iterable[Exception]:
     for tab in tabs():
+        if isinstance(tab, Exception):
+            # todo collect errors in a separate tab? or just 'dashboard.html'?
+            yield tab
+            continue
+
         if tab_name is not None and tab.name != tab_name:
             logging.info('skipping %s', tab.name)
             # todo error if no matches??

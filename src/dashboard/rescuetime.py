@@ -4,6 +4,7 @@ from bokeh.models import ColumnDataSource as CDS
 from bokeh.layouts import column
 
 from .core.bokeh import set_hhmm_axis, date_figure
+from .core import tab
 from .misc import add_daysoff
 
 
@@ -70,6 +71,7 @@ def _plot_rescuetime(df):
 # mapper = LinearColorMapper(palette=colors, low=0, high=3600)
 # transform('duration_s', mapper))
 
+@tab
 def plot_rescuetime():
     from .data import rescuetime_dataframe as DF
     return _plot_rescuetime(DF())

@@ -7,6 +7,7 @@ from bokeh.layouts import column
 
 from .core.bokeh import scatter_matrix, rolling
 from .core.pandas import unlocalize, lag_df
+from .core import tab
 
 
 def _sleepy_df():
@@ -19,6 +20,7 @@ def _sleepy_df():
     return s
 
 
+@tab
 def plot_sleepiness_vs_exercise():
     from .data import cardio_dataframe as CDF
 
@@ -42,7 +44,7 @@ def plot_sleepiness_vs_exercise():
     return rolling(x='lag', y='value', df=ldf, avgs=[]).figure
 
 
-# TODO add some sort of discovery annotation for the plots...
+@tab
 def plot_sleepiness_vs_sleep():
     from .data import sleep_dataframe as DF
     sdf = DF()
@@ -56,7 +58,6 @@ def plot_sleepiness_vs_sleep():
     sdf = sdf[sdf.index >= min(s.index)]
 
     deltas = [timedelta(hours=h) for h in range(-24 * 5, 24 * 5, 4)]
-    # TODO ugh. automatic titles would be nice...
     # TODO need something similar to scatter matrix, but instead of scatter, covariance??
     # TODO unhardcode
     ress = []
