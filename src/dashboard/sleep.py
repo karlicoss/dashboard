@@ -212,7 +212,7 @@ def _plot_sleep_correlations(df):
     tools = [hover, 'box_select', 'lasso_select', 'tap']
     from .core.bokeh import scatter_matrix
     import holoviews as hv
-    sm = scatter_matrix(df, width=2000, height=2000).opts(
+    sm = scatter_matrix(df, width=3000, height=3000).opts(
         # todo make it deafult in scatter_matrix??
         hv.opts.Scatter  (tools=tools),
         hv.opts.Histogram(tools=tools),

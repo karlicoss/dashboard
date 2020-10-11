@@ -90,6 +90,11 @@ def tabs() -> Iterable[Tab]:
         return P()
     yield tab(sleep_vs_exercise)
 
+    def sleepiness_vs_exercise():
+        from .sleepiness import plot_sleepiness_vs_exercise as P
+        return P()
+    yield tab(sleepiness_vs_exercise)
+
     def rescuetime():
         from .rescuetime import plot_rescuetime as P
         return P()

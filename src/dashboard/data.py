@@ -31,6 +31,12 @@ def sleep_dataframe():
 
 
 @lru_cache()
+def sleepiness_dataframe():
+    import my.body.sleep.sleepiness as S
+    return S.dataframe()
+
+
+@lru_cache()
 def blood_dataframe():
     import my.body.blood as B
     return B.dataframe()
