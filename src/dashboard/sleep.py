@@ -251,14 +251,6 @@ def plot_sleep_correlations_fake():
         return plot_sleep_correlations()
 
 
-# todo make_test function?
-def test_sleep_all() -> None:
-    from .core.test_core import save_plot
-    f = plot_sleep_all_fake()
-    save_plot(f, name='sleep.html')
-
-
-def test_sleep_correlations():
-    from .core.test_core import save_plot
-    f = plot_sleep_correlations_fake()
-    save_plot(f, name='sleep_correlations.html')
+from .core.tests import make_test
+test_sleep_all          = make_test(plot_sleep_all_fake)
+test_sleep_correlations = make_test(plot_sleep_correlations_fake)

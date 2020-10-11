@@ -26,23 +26,7 @@ def hash_df(df) -> str:
 #     assert s.encode('utf8').decode('utf8') == s
 
 
-def save_plot(plot, name: str):
-    from pathlib import Path
-    base = Path('test-outputs')
-    path = base / Path(name)
-    path.parent.mkdir(exist_ok=True, parents=True)
-    suf = path.suffix
-    if suf == '.html':
-        from bokeh.io import output_file, save
-        output_file(str(path), title='hello', mode='inline', root_dir=None)
-        save(plot)
-    elif suf == '.png':
-        # todo sigh.. seems that png export is way too slow
-        from bokeh.io import export_png
-        export_png(plot, filename=str(path))
-    else:
-        raise RuntimeError(name, suf)
-
+from .tests import save_plot
 SETTINGS: Dict[str, Any] = dict(
     derandomize=True, # I want deterministic..
     deadline=None, # saving timings might end up very different
