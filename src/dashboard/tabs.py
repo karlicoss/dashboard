@@ -50,6 +50,12 @@ def tabs() -> Iterable[Res[Tab]]:
         yield e
 
     try:
+        from . import     exercise
+        yield from handle(exercise)
+    except Exception as e:
+        yield e
+
+    try:
         from . import     weight
         yield from handle(weight)
     except Exception as e:
