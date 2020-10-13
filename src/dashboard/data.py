@@ -73,6 +73,12 @@ def cross_trainer_dataframe():
     return E.dataframe()
 
 
+@lru_cache()
+def manual_exercise_dataframe():
+    import my.body.exercise.manual as M
+    return M.dataframe()
+
+
 @lru_cache
 def rescuetime_dataframe():
     import my.rescuetime as R
