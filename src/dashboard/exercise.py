@@ -9,7 +9,7 @@ from bokeh.layouts import column
 from bokeh.transform import jitter
 
 from .core import tab
-from .core.bokeh import date_figure, plot_multiple
+from .core.bokeh import date_figure, plot_multiple, rolling
 from .core.pandas import unlocalize
 
 
@@ -27,17 +27,18 @@ def _plot_manual_exercise(df):
     df  = df[~has_err]
     # TODO would be nice to reuse stuff to display errors as a table
 
+    # FIXME handle none carefully here, otherwise they aren't displayed
     plots = []
     # todo hmm, reuse group hints somehow? not sure..
 
     # TODO helper groupby to check for None (to make sure they are handled)
-    groups = list(df.groupby('name'))
+    groups = list(df.groupby('kind'))
     # sort by the most recent
-    groups = list(sorted(groups, key=lambda name_d: max(unlocalize(name_d[1]['dt'])), reverse=True))
+    groups = list(sorted(groups, key=lambda kind_d: max(unlocalize(kind_d[1]['dt'])), reverse=True))
 
-    names = [name for name, _ in groups]
+    kinds = [kind for kind, _ in groups]
     # make colors stable
-    colors = {name: c for name, c in zip(names, cycle(pallete))}
+    colors = {kind: c for kind, c in zip(kinds, cycle(pallete))}
     colors['errors'] = 'red'
 
     x_range = None
@@ -61,9 +62,37 @@ def _plot_manual_exercise(df):
     return column(plots)
 
 
+def _plot_strength_volume(df):
+    # TODO make a single point through which the errors get?
+    # general pattern:
+    # a) make sure the lowest level stuff is paranoid and dumps warnings/exception/spams on plot
+    # b) helpers for split_errors
+    # b) static analysis to check unused stuff
+    df['dt'] = unlocalize(df['dt'])
+    df = df.set_index('dt')
+
+    has_err = df['error'].notna()
+    # todo split_by helper??
+    errs = df[has_err].copy()
+    df = df[~has_err]
+    # todo what happens to errors??
+    df = df.resample('D').sum()
+    # todo do not display '0' here? special option??
+    # FIXME add mixed timezones to rolling tests
+
+    # TODO color different points as exercise kinds?
+    res = rolling(x='dt', y='volume', df=df, avgs=['30D'])
+    return res.figure
+
+
 @tab
 def plot_manual_exercise():
     from .data import manual_exercise_dataframe as DF
     return _plot_manual_exercise(DF())
+
+@tab
+def plot_strength_volume():
+    from .data import manual_exercise_dataframe as DF
+    return _plot_strength_volume(DF())
 
 # TODO reuse same thingie for grouping stuff?
