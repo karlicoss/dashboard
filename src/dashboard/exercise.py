@@ -85,6 +85,7 @@ def _plot_strength_volume(df):
     return res.figure
 
 
+# todo add cardio here as well? should be the summary of all exercise?
 @tab
 def plot_manual_exercise():
     from .data import manual_exercise_dataframe as DF

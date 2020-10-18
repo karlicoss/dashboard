@@ -110,13 +110,16 @@ def test_rolling_errors(df):
 # https://hypothesis.works/articles/how-many-tests/#failing-tests
 
 
+# TODO WTF?? it generates really dumb examples...
+_count2 = 0
 import string
-@settings(**SETTINGS, max_examples=10)
+@settings(**SETTINGS, max_examples=20)
 @given(data_frames(
     columns=[
         column('dt'    , dtype=datetime),
         column('value1', dtype=float   ),
         column('value2', dtype=float   ),
+        column('value3', dtype=float   ),
         column('error' , dtype=str     ),
     ],
     rows=st.tuples(
@@ -124,11 +127,12 @@ import string
             min_value=datetime.strptime('20190101', '%Y%m%d'),
             max_value=datetime.strptime('20200101', '%Y%m%d'),
         ),
+        st.floats(min_value=0.0 , max_value=10.0),
         st.floats(allow_nan=True),
-        st.floats(allow_nan=True),
+        st.floats(min_value=10.0, max_value=100.0),
         st.text(alphabet=string.ascii_letters),
     ),
-))
+).filter(lambda df: len(df) > 5))
 # @example(pd.DataFrame([
 #     dict(dt=None, value1=0.0, value2=0.0   , error=''),
 #     dict(dt=None, value1=0.0, value2=np.inf, error=''),
@@ -137,6 +141,9 @@ def test_scatter_matrix(df):
     # every other is an error
     df[::2]['error'] = ''
 
-    sm = scatter_matrix(df)
-    import holoviews as hv
-    hv.render(sm)
+    r = scatter_matrix(df, ys=['value1', 'value2', 'value3'])
+    global _count2
+    _count2 += 1
+    # TODO ugh. possibly need to disable Hypothesis check for deterministic time to run the function
+    # this makes it retest too many times because the rendering takes unpredictable time..
+    save_plot(r, name=f'test_scatter_matrix_{_count2}.html')

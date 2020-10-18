@@ -210,18 +210,11 @@ def _plot_sleep_correlations(df):
     # todo reuse/determine width
     # hmm, didn't manage to quickly google how to do this
     # todo chart_opts in hvplot.scatter_matric?
-    tools = [hover, 'box_select', 'lasso_select', 'tap']
+    tools = [hover] # FIXME , 'box_select', 'lasso_select', 'tap']
     from .core.bokeh import scatter_matrix
-    import holoviews as hv
-    sm = scatter_matrix(df, width=3000, height=3000).opts(
-        # todo make it deafult in scatter_matrix??
-        hv.opts.Scatter  (tools=tools),
-        hv.opts.Histogram(tools=tools),
-    #    # opts.Layout(width=2000, height=2000), # -- doesn't seem to do anything?
-    )
-
+    sm = scatter_matrix(df, width=3000, height=3000, tools=tools)
     # TODO autodetect and have a global render() function that can handle anything?
-    return hv.render(sm)
+    return sm
 
     # TODO add tools for vertical projections?
     # ugh. https://github.com/holoviz/hvplot/blob/ab43c4f68aa7e485326dea567a348b96d24ebf60/hvplot/plotting/scatter_matrix.py#L45 not sure if the needed parameters are passed?..

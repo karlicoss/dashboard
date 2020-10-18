@@ -3,7 +3,7 @@ Correlations, etc., combined from multiple data sources (haven't come up with a 
 '''
 from datetime import timedelta
 
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, PanTool, WheelZoomTool
 
 from .core.bokeh import scatter_matrix, rolling
 from .core.pandas import unlocalize, lag_df
@@ -67,15 +67,9 @@ def _plot_sleep_vs_exercise(edf):
     hover = HoverTool(
         tooltips=[(x, f'@{x}') for x in df.columns],
     )
-    tools = [hover, 'box_select', 'lasso_select', 'tap']
-    import holoviews as hv
-    sm = scatter_matrix(df, width=3000, height=3000).opts(
-        # todo make it deafult in scatter_matrix??
-        hv.opts.Scatter  (tools=tools),
-        hv.opts.Histogram(tools=tools),
-    #    # opts.Layout(width=2000, height=2000), # -- doesn't seem to do anything?
-    )
-    return hv.render(sm)
+    tools = [hover, PanTool(), WheelZoomTool()] # , 'box_select', 'lasso_select', 'tap']
+    sm = scatter_matrix(df, xs=[CE.volume], width=3000, height=3000, tools=tools)
+    return sm
 
 
 @tab
@@ -94,7 +88,6 @@ def plot_sleep_vs_strength():
     sdf[CE.volume] = sdf['volume']
     # todo could interpolate time to average? prob. doesn't really matter
     sdf[CE.dt    ] = sdf['dt'    ]
-    breakpoint()
     return _plot_sleep_vs_exercise(sdf)
 # todo pass title
 

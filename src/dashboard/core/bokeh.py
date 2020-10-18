@@ -1,5 +1,5 @@
 from datetime import date, timedelta, datetime
-from itertools import cycle
+from itertools import cycle, chain
 import logging
 from typing import Dict, Optional, Sequence, Union
 import warnings
@@ -14,147 +14,148 @@ import pandas as pd
 
 # TODO FIXME also handle errors?
 # global error list + plotly like number of errors per plot?
-def scatter_matrix(df, *args, width=None, height=None, regression=True, **kwargs):
-    import hvplot
-    import holoviews as hv
-    hv.extension('bokeh')
-
-    columns = df.columns
-    # TODO might be useful to include/exclude specific cols (e.g. datetime) while keeping them in annotations
-    # todo reuse plotly code from old dashboard?
-
-    if 'c' not in kwargs:
-        # NOTE: if we don't specify some color, hvplot.scatter_matrix ignores kwargs completely (see the code). TODO perhaps report a bug?
-        df = df.copy()
-        df['fake_color'] = 'fake_color'
-        kwargs['c'] = 'fake_color'
-
-    ## hvplot.scatter_matrix seems to ignore width/height params, so we make up for it
-    extra_opts = []
-    w1 = None if width  is None else width  // len(columns)
-    h1 = None if height is None else height // len(columns)
-    if h1 is not None or w1 is not None:
-        extra_opts.append(hv.opts.Scatter  (frame_width=w1, frame_height=h1))
-        extra_opts.append(hv.opts.Histogram(frame_width=w1, frame_height=h1))
-    ##
-
-    if len(df) == 0:
-        # otherwise hvplot.scatter_matrix fails
-        return hv.Text(
-            0.0,
-            0.0,
-            'ERROR: empty dataframe',
-            halign='left',
-        )
-
-
-    # TODO hmm. seems that it magically removing all non-numeric data?
-    # unfortunately, this might mess with labels... wonder if I need my custom impl after all...
-    # I guess need to look in hvplot.gridmatrix code... definitely add a visual test for that...
-    sm = hvplot.scatter_matrix(
+def scatter_matrix(
         df,
-        *args,
+        *,
+        tools=None,
+        xs: Sequence[str]=None, ys: Sequence[str]=None,
+        width=None, height=None,
+        regression=True,
         **kwargs,
-        show_grid=True,
-    ).opts(*extra_opts)
+):
+    assert len(df) > 0, 'TODO handle this'
+
+    # FIXME handle empty df
+    source = CDS(df)
+    # TODO what about non-numeric stuff?
+
+    xs = df.columns if xs is None else xs
+    ys = df.columns if ys is None else ys
+    ys = list(reversed(ys)) # reorder to move meaningful stuff to the top left corner
+
+    from pandas.api.types import is_numeric_dtype
+    isnum = lambda c: is_numeric_dtype(df.dtypes[c])
+    # reorder so non-numeric is in the back
+    # todo mode to drop non-numeric? not sure.. definitely can drop 'error' and datetimish?
+    xs = list(sorted(xs, key=isnum, reverse=True))
+    ys = list(sorted(ys, key=isnum, reverse=True))
+
+    from bokeh.models import Label
+    # TODO not sure I wanna reuse axis?
+    def make(xc: str, yc: str):
+        p = figure()
+        if tools is not None:
+            # TODO eh, should have single global instance??
+            p.add_tools(*tools)
+        diag = xc == yc # todo handle properly
+        # TODO not sure if I even want them... move to the very end?
+        if isnum(xc) and isnum(yc):
+            p.circle(x=xc, y=yc, source=source, size=2)
+        else:
+            # TODO ugh, doesn't want to show the label without any points??
+            # p.circle(x=0.0, y=0.0)
+            # FIXME how to make sure text fits into the plot??
+            add_text(
+                p,
+                x=0.0, y=0.0,
+                text='Not numeric',
+                text_color='red',
+            )
+        p.xaxis.axis_label = xc
+        p.yaxis.axis_label = yc
+        return p
+
+    grid = [[make(xc=x, yc=y) for x in xs] for y in ys]
+    from bokeh.layouts import gridplot
+    w1 = None if width  is None else width  // max(len(xs), len(ys))
+    h1 = None if height is None else height // max(len(xs), len(ys))
+    grid_res = gridplot(grid, plot_width=w1, plot_height=h1)
+
+    # TODO might be useful to include/exclude specific cols (e.g. datetime) while keeping them in annotations
+
     # TODO add the presence of the grid to the 'visual tests'
     # but if I swith it to raw bokeh -- it has Grid class.. might need to mess with
     # also maybe add extra axis under each plot in the grid? easier for a huge matrix of plots
     # some code in old dashboard
+    if not regression:
+        return grid_res
+
+    # todo this would be need for plotly as well?
+    import statsmodels.formula.api as smf # type: ignore
+
+    for plot in chain.from_iterable(grid):
+        gs = plot.renderers
+        if len(gs) == 0:
+            # must be non-numeric? meh though
+            continue
+        [g] = gs
+        xx = g.glyph.x
+        yy = g.glyph.y
+
+        if xx == yy:
+            # diagonal thing, e.g. histogram
+            continue
+
+        with pd.option_context('mode.use_inf_as_null', True):
+            # FIXME proper error handling, display number of dropped items?
+            dd = df[[xx, yy]].dropna() # otherwise from_scatter fails
+        # todo would be nice to display stats on the number of points dropped
 
 
-    if regression:
-        # todo this would be need for plotly as well?
-        import statsmodels.formula.api as smf # type: ignore
-
-        # todo what about non-numeric stuff?
-
-        # GridMatrix is just a dict. nice!
-        for k, plot in sm.items():
-            xx, yy = k
-            if xx == yy:
-                # diagonal thing, e.g. histogram
-                continue
-
-            with pd.option_context('mode.use_inf_as_null', True):
-                dd = plot.data[[xx, yy]].dropna() # otherwise from_scatter fails
-            # todo would be nice to display stats on the number of points dropped
-
-            udd = dd.drop_duplicates()
-            if len(udd) <= 1:
-                # can't perform a reasonable regression then
-
-                # todo determine limits somehow??
-                # todo red color
-                text = hv.Text(
-                    0.0,
-                    0.0,
-                    'ERROR: no points to correlate',
-                    halign='left',
-                )
-                sm[k] = plot * text
-                continue
-
-
-            res = smf.ols(f"{yy} ~ {xx}", data=dd).fit()
-            intercept = res.params['Intercept']
-            slope = res.params[xx]
-            r2 = res.rsquared
-
-            # todo ugh. why is it so hard... I wonder if holoviews only makes it harder..
-            # lbl = Label(x=70, y=70, x_units='screen', text='Some Stuff', render_mode='css',
-            #     border_line_color='black', border_line_alpha=1.0,
-            #     background_fill_color='white', background_fill_alpha=1.0)
-
-            ## TODO crap. is it really the best way to figure out relative position??
-            relx = 0.01
-            rely = 0.1
-
-            # todo highlight high enough R2?
-            minx, maxx = min(dd[xx]), max(dd[xx])
-            miny, maxy = min(dd[yy]), max(dd[yy])
-            # todo font size dependent on width?? ugh.
-            #
-            ##
-            txt = f'R2 = {r2:.4f}\n{yy} ~ {slope:.3f} {xx}'
-
-            # todo need to add various regression properties, like intercept, etc
-            # TODO hopefuly this overlays correctly?? not sure about nans, again
-            try:
-                sl = hv.Slope.from_scatter(hv.Scatter((dd[xx], dd[yy]))).opts(color='green')
-            except ValueError as ve:
-                dl_err = 'On entry to DLASCL parameter number 4 had an illegal value'
-                if dl_err not in str(ve):
-                    raise ve
-
-                sl = None
-                # https://github.com/statsmodels/statsmodels/issues/35966
-                txt += f'\nERROR: {dl_err}'
-
-            text = hv.Text(
-                minx + (maxx - minx) * relx,
-                miny + (maxy - miny) * rely,
-                txt,
-                halign='left',
+        udd = dd.drop_duplicates()
+        if len(udd) <= 1:
+            # can't perform a reasonable regression then
+            add_text(
+                plot,
+                x=0.0,
+                y=0.0,
+                text='ERROR: no points to correlate',
+                text_color='red',
             )
+            continue
 
-            # just a sanity check.. not sure which one I should use?
-            # sl2 = hv.Slope(slope, intercept).opts(color='green')
-            # TODO ugh. title doesn't work??
 
-            rplot = plot
-            if sl is not None:
-                rplot *= sl
-            rplot *= text
+        res = smf.ols(f"{yy} ~ {xx}", data=dd).fit()
+        intercept = res.params['Intercept']
+        slope = res.params[xx]
+        r2 = res.rsquared
 
-            sm[k] = rplot
+        ## TODO crap. is it really the best way to figure out relative position??
+        relx = 0.01
+        rely = 0.1
 
-            # wow! * (same plot) vs + (different plots) is pretty clever!
-            # also I like how multiplication doesn't commute so the 'first' plot wins the layout parameters
+        # todo highlight high enough R2?
+        minx, maxx = min(dd[xx]), max(dd[xx])
+        miny, maxy = min(dd[yy]), max(dd[yy])
+        # todo font size dependent on width?? ugh.
+        txt = f'R2 = {r2:.4f}\nY ~ {slope:.3f} X'
+
+        # todo need to add various regression properties, like intercept, etc
+        # TODO hopefuly this overlays correctly?? not sure about nans, again
+        from bokeh.models import Slope
+        sl = Slope(gradient=slope, y_intercept=intercept, line_color='green', line_width=3)
+        plot.add_layout(sl)
+        add_text(
+            plot,
+            text=txt,
+            x=minx + (maxx - minx) * relx,
+            y=miny + (maxy - miny) * rely,
+            text_color=g.glyph.line_color,
+        )
+
 
     # TODO dynamic resizing would be nice
-    return sm
+    return grid_res
 # todo plotly/sns also plotted some sort of confidence intervals? not sure if they are useful
+
+def add_text(plot, *, text: str, **kwargs):
+    from bokeh.models import Text
+    # ugh. for fuck's sake, Label doesn't support multiline... https://github.com/bokeh/bokeh/issues/7317
+    # and glyphs always want a data source
+    textsrc = CDS({'text': [text]})
+    kwargs['text'] = 'text'
+    glyph = Text(**kwargs)
+    plot.add_glyph(textsrc, glyph)
 
 
 def test_scatter_matrix_demo() -> None:
