@@ -457,6 +457,8 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
 # ugh. without date_figure it's actually showing unix timestamps on the x axis
 # wonder if can make it less manual?
 def date_figure(df=None, **kwargs):
+    # todo extract that to an even more basic handler?
+    # just base figure or something
     from bokeh.models import HoverTool
 
     if df is None:
@@ -472,19 +474,29 @@ def date_figure(df=None, **kwargs):
     formatters = {}
     for c, t in dtypes.items():
         fmt = None
-        tfmt = ''
-        if 'datetime64' in str(t): # meh
+        tfmt = '@' + c
+        if df is None:
+            dateish = 'datetime64' in str(t)
+        else:
+            # this is more reliable, works if there is a mix of timestamps..
+            s = df.reset_index()[c]
+            dateish = s.apply(lambda x: isinstance(x, (pd.Timestamp, datetime, type(None)))).all()
+        # TODO add to tests?
+        if dateish:
             fmt = 'datetime'
             # todo %T only if it's actually datetime, not date? not sure though...
-            tfmt = '{%F %a %T}'
+            tfmt += '{%F %a %T}'
         elif 'timedelta64' in str(t): # also meh
             fmt = 'datetime'
             # eh, I suppose ok for now. would be nice to reuse in the tables...
-            tfmt = '{%H:%M}'
+            tfmt += '{%H:%M}'
+        elif c == 'error':
+            # FIXME ugh. safe here is potentially dangerous... need to figure out how to do this
+            tfmt = '<pre>@error{safe}</pre>'
         if fmt is not None:
             formatters['@' + c] = fmt
 
-        tooltips.append((c, f'@{c}' + tfmt))
+        tooltips.append((c, tfmt))
 
     # see https://docs.bokeh.org/en/latest/docs/user_guide/tools.html#formatting-tooltip-fields
     # TODO: use html tooltip with templating
