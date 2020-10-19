@@ -8,14 +8,27 @@ from itertools import islice
 from pathlib import Path
 
 
-@lru_cache()
+def df_cache(f):
+    from functools import wraps
+
+    @lru_cache
+    def cached(*args, **kwargs):
+        return f(*args, **kwargs)
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        return cached(*args, **kwargs).copy()
+    return wrapper
+
+
+@df_cache
 def locations():
     import my.location.google as G
     # todo islice something earlier?
     return list(G.locations())
 
 
-@lru_cache()
+@df_cache
 def locations_dataframe(limit=None):
     import pandas as pd # type: ignore
     locs = locations()
@@ -24,13 +37,13 @@ def locations_dataframe(limit=None):
     return df
 
 
-@lru_cache()
+@df_cache
 def sleep_dataframe():
     import my.body.sleep.main as S
     return S.dataframe()
 
 
-@lru_cache()
+@df_cache
 def sleepiness_dataframe():
     import my.body.sleep.sleepiness as S
     df = S.dataframe()
@@ -40,14 +53,14 @@ def sleepiness_dataframe():
     return df
 
 
-@lru_cache()
+@df_cache
 def blood_dataframe():
     import my.body.blood as B
     return B.dataframe()
 
 
 # TODO figure out when I need caching and when I don't. ideally, HPI can take care of it
-@lru_cache()
+@df_cache
 def weight_dataframe():
     # import my.body.weight as W
     # TODO use an overlay instead. also document how to do this?
@@ -55,36 +68,36 @@ def weight_dataframe():
     return W.dataframe()
 
 
-@lru_cache()
+@df_cache
 def endomondo_dataframe():
     import my.endomondo as E
     return E.dataframe()
 
 
-@lru_cache()
+@df_cache
 def cardio_dataframe():
     import my.body.exercise.cardio as E
     return E.dataframe()
 
 
-@lru_cache()
+@df_cache
 def cross_trainer_dataframe():
     import my.body.exercise.cross_trainer as E
     return E.dataframe()
 
 
-@lru_cache()
+@df_cache
 def manual_exercise_dataframe():
     import my.body.exercise.manual as M
     return M.dataframe()
 
 
-@lru_cache
+@df_cache
 def rescuetime_dataframe():
     import my.rescuetime as R
     return R.dataframe()
 
-@lru_cache
+@df_cache
 def bluemaestro_dataframe():
     import my.bluemaestro as B
     return B.dataframe()
