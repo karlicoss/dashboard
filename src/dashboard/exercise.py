@@ -12,6 +12,8 @@ from .core import tab
 from .core.bokeh import date_figure, plot_multiple, rolling
 from .core.pandas import unlocalize
 
+import numpy as np # type: ignore
+
 
 def _plot_manual_exercise(df):
     pallete = palletes[max(palletes)] # get last
@@ -47,10 +49,21 @@ def _plot_manual_exercise(df):
             groups,
     ):
         color = colors[k]
-        # todo add some x jitter to declutter?
+        # TODO add some x jitter to declutter?
         # need to preserve the order though? I guess need to group
         p = date_figure(df, height=150, x_range=x_range)
-        p.scatter(x='dt', y='reps', source=CDS(edf), legend_label=k, color=color)
+        p.scatter(x='dt', y='reps'  , source=CDS(edf), legend_label='reps'  , color=color)
+
+        from bokeh.models import LinearAxis, Range1d
+        maxy = np.nanmax(edf['volume'] * 1.1) # TODO meh
+        if not np.isnan(maxy): # I guess doesn't have volume?
+            p.extra_y_ranges = {'volume': Range1d(start=0.0, end=maxy)}
+            # add the second axis to the plot.
+            p.add_layout(LinearAxis(y_range_name='volume'), 'right')
+            p.scatter(x='dt', y='volume', source=CDS(edf), legend_label='volume', color='black', size=2, y_range_name='volume')
+
+        p.title.text = k
+
         p.legend.click_policy = 'hide'
         p.y_range.start = 0
 
@@ -76,6 +89,7 @@ def _plot_strength_volume(df):
     errs = df[has_err].copy()
     df = df[~has_err]
     # todo what happens to errors??
+    # FIXME need a helper resample method to combine string-like stuff
     df = df.resample('D').sum()
     # todo do not display '0' here? special option??
     # FIXME add mixed timezones to rolling tests
