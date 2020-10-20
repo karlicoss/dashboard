@@ -1,12 +1,11 @@
 from datetime import date, timedelta, datetime
 from itertools import cycle, chain
 import logging
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union, Any
 import warnings
 
 from bokeh.layouts import gridplot, column
 from bokeh.models import ColumnDataSource as CDS, Text, Title, Label
-from bokeh.plotting import figure
 
 import numpy as np
 import pandas as pd
@@ -17,7 +16,6 @@ import pandas as pd
 def scatter_matrix(
         df,
         *,
-        tools=None,
         xs: Sequence[str]=None, ys: Sequence[str]=None,
         width=None, height=None,
         regression=True,
@@ -43,14 +41,11 @@ def scatter_matrix(
     from bokeh.models import Label
     # TODO not sure I wanna reuse axis?
     def make(xc: str, yc: str):
-        p = figure()
-        if tools is not None:
-            # TODO eh, should have single global instance??
-            p.add_tools(*tools)
+        p = figure(df=df)
         diag = xc == yc # todo handle properly
         # TODO not sure if I even want them... move to the very end?
         if isnum(xc) and isnum(yc):
-            p.circle(x=xc, y=yc, source=source, size=2)
+            p.scatter(x=xc, y=yc, source=source, size=3)
         else:
             # TODO ugh, doesn't want to show the label without any points??
             # p.circle(x=0.0, y=0.0)
@@ -67,8 +62,8 @@ def scatter_matrix(
 
     grid = [[make(xc=x, yc=y) for x in xs] for y in ys]
     from bokeh.layouts import gridplot
-    w1 = None if width  is None else width  // max(len(xs), len(ys))
-    h1 = None if height is None else height // max(len(xs), len(ys))
+    w1 = None if width  is None else width  // min(len(xs), len(ys))
+    h1 = None if height is None else height // min(len(xs), len(ys))
     grid_res = gridplot(grid, plot_width=w1, plot_height=h1)
 
     # TODO might be useful to include/exclude specific cols (e.g. datetime) while keeping them in annotations
@@ -455,13 +450,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
     # )
 
 
-# ugh. without date_figure it's actually showing unix timestamps on the x axis
-# wonder if can make it less manual?
-def date_figure(df=None, **kwargs):
-    # todo extract that to an even more basic handler?
-    # just base figure or something
-    from bokeh.models import HoverTool
-
+def figure(df=None, **kwargs) -> Figure:
     if df is None:
         # just have at least some defaults..
         dtypes = {
@@ -480,8 +469,8 @@ def date_figure(df=None, **kwargs):
             dateish = 'datetime64' in str(t)
         else:
             # this is more reliable, works if there is a mix of timestamps..
-            s = df.reset_index()[c]
-            dateish = s.apply(lambda x: isinstance(x, (pd.Timestamp, datetime, type(None)))).all()
+            s = df.reset_index()[c].dropna()
+            dateish = len(s) > 0 and s.apply(lambda x: isinstance(x, (pd.Timestamp, datetime))).all()
         # TODO add to tests?
         if dateish:
             fmt = 'datetime'
@@ -498,10 +487,12 @@ def date_figure(df=None, **kwargs):
             formatters['@' + c] = fmt
 
         tooltips.append((c, tfmt))
+    # TODO very annoying, seems that if one of the tooltips is broken, nothing works at all?? need defensive tooltips..
 
     # see https://docs.bokeh.org/en/latest/docs/user_guide/tools.html#formatting-tooltip-fields
     # TODO: use html tooltip with templating
     # and https://docs.bokeh.org/en/latest/docs/reference/models/formatters.html#bokeh.models.formatters.DatetimeTickFormatter
+    from bokeh.models import HoverTool
     hover = HoverTool(
         tooltips=tooltips,
         formatters=formatters,
@@ -509,9 +500,21 @@ def date_figure(df=None, **kwargs):
         # TODO not sure I like this, it's a bit spammy
         mode='vline'
     )
-    f = figure(x_axis_type='datetime', plot_width=2000, **kwargs)
+    from bokeh.plotting import figure as F
+    # todo no need to pass plot_width?
+    f = F(plot_width=2000, **kwargs)
+    # ugh. would be nice if add_tools returned self..
     f.add_tools(hover)
     return f
+
+
+# not sure if it's that useful.. for a single parameter.
+def date_figure(df=None, **kwargs) -> Figure:
+    # ugh. without date_figure it's actually showing unix timestamps on the x axis
+    # wonder if can make it less manual?
+    kw = dict(x_axis_type='datetime')
+    kw.update(**kwargs)
+    return figure(df=df, **kw)
 
 
 # NOTE: this
@@ -607,6 +610,7 @@ def plot_multiple(df, *, columns, **kwargs):
     plots = []
     for grp in groups:
         # todo add source to annotation?
+        # todo rely on kwargs for date x axis?
         p = date_figure(x_range=x_range, **kwargs)
 
         # todo color rainbow??

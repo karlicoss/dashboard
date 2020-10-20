@@ -3,8 +3,6 @@ Correlations, etc., combined from multiple data sources (haven't come up with a 
 '''
 from datetime import timedelta
 
-from bokeh.models import HoverTool, PanTool, WheelZoomTool
-
 from .core.bokeh import scatter_matrix, rolling
 from .core.pandas import unlocalize, lag_df
 from .core import tab
@@ -62,13 +60,7 @@ def _plot_sleep_vs_exercise(edf):
 
     import pandas as pd
     df = pd.DataFrame(rows)
-
-    # todo copy pasted, use a generic function
-    hover = HoverTool(
-        tooltips=[(x, f'@{x}') for x in df.columns],
-    )
-    tools = [hover, PanTool(), WheelZoomTool()] # , 'box_select', 'lasso_select', 'tap']
-    sm = scatter_matrix(df, xs=[CE.volume], width=3000, height=3000, tools=tools)
+    sm = scatter_matrix(df, xs=[CE.volume], width=1000, height=1000)
     return sm
 
 
