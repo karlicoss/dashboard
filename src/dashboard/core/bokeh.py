@@ -88,7 +88,7 @@ def scatter_matrix(
         yy = g.glyph.y
 
         if xx == yy:
-            # diagonal thing, e.g. histogram
+            # diagonal thing, e.g. histogram. compute some stats??
             continue
 
         with pd.option_context('mode.use_inf_as_null', True):
@@ -449,7 +449,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
     #     figures=[plot],
     # )
 
-
+from bokeh.models import CustomJSHover
 def figure(df=None, **kwargs) -> Figure:
     if df is None:
         # just have at least some defaults..
@@ -477,9 +477,9 @@ def figure(df=None, **kwargs) -> Figure:
             # todo %T only if it's actually datetime, not date? not sure though...
             tfmt += '{%F %a %T}'
         elif 'timedelta64' in str(t): # also meh
-            fmt = 'datetime'
+            fmt = CustomJSHover(code='const tick = value; ' + hhmm_formatter(unit=t))
+            tfmt += '{custom}'
             # eh, I suppose ok for now. would be nice to reuse in the tables...
-            tfmt += '{%H:%M}'
         elif c == 'error':
             # FIXME ugh. safe here is potentially dangerous... need to figure out how to do this
             tfmt = '<pre>@error{safe}</pre>'
@@ -673,16 +673,43 @@ def plot_multiple(df, *, columns, **kwargs):
 
 
 def set_hhmm_axis(axis, *, mint: int, maxt: int, period: int=30) -> None:
-    from bokeh.models import FuncTickFormatter, FixedTicker
+    from bokeh.models import FixedTicker
     # FIXME infer mint/maxt
-    axis.ticker = FixedTicker(ticks=list(range(mint, maxt, period)))
-    axis.formatter = FuncTickFormatter(code="""
-        var hh = Math.floor(tick / 60 % 24).toString()
-        var mm = (tick % 60).toString()
-        if (hh.length == 1) hh = "0" + hh;
-        if (mm.length == 1) mm = "0" + mm;
-        return `${hh}:${mm}`
-    """)
+    ticks = list(range(mint, maxt, period))
+    axis.ticker = FixedTicker(ticks=ticks)
+    from bokeh.models import FuncTickFormatter
+    axis.formatter = FuncTickFormatter(code=hhmm_formatter(unit=int))
+
+
+# TODO use J for defensive js?
+def hhmm_formatter(unit):
+    if unit == int:
+        xx = 'var mins = tick'
+    elif str(unit) == 'timedelta64[ns]':
+        xx = 'var mins = Math.floor(tick / 10 ** 3 / 60)' # eh why 10^3 works if it's nanos??
+    else:
+        raise RuntimeError(f'Unhandled: {unit}')
+
+    return xx + """
+        var sign = ''
+        if (mins < 0) {
+            sign = '-'
+            mins = -mins
+        }
+        var days = ''
+        var hh = Math.floor(mins / 60).toString()
+        if (hh > 24) {
+            days = Math.floor(hh / 24).toString() + 'd '
+            hh = hh % 24
+        }
+        var mm = (mins % 60).toString()
+        if (hh.length == 1) hh = "0" + hh
+        if (mm.length == 1) mm = "0" + mm
+        var parts = []
+        parts.push(hh)
+        parts.push(mm)
+        return sign + days + parts.join(':')
+    """
 
 
 def guess_range(plot, *, axis: str):

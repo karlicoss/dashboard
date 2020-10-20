@@ -20,7 +20,7 @@ def _plot_rescuetime(df):
         df['date']   = df['dt'].dt.floor('D')
         df['left'  ] = df['date'] - timedelta(days=0.5) # make it centered at the day boundary
         df['right' ] = df['left'] + timedelta(days=1)
-        df['bottom'] = df['dt'].apply(mins)
+        df['bottom'] = df['dt'].apply(mins) # TODO use time type here instead??
 
 
     # right, so it seem it's aggregating at 5 minute boundaries? so if we don't do this, rects will overlap on the plot
