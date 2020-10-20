@@ -71,7 +71,6 @@ def _plot_manual_exercise(df):
             x_range = p.x_range
         plots.append(p)
         # TODO not sure if I want sliding averages?
-    # FIXME tooltips -- dt displayed as milliseconds
     return column(plots)
 
 

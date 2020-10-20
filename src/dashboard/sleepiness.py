@@ -4,8 +4,9 @@ Subjectiveness sleepiness, felt during the day
 from datetime import timedelta
 
 from bokeh.layouts import column
+from bokeh.models import FuncTickFormatter
 
-from .core.bokeh import scatter_matrix, rolling
+from .core.bokeh import scatter_matrix, rolling, hhmm_formatter
 from .core.pandas import unlocalize, lag_df
 from .core import tab
 
@@ -22,6 +23,7 @@ def _sleepy_df():
 
 @tab
 def plot_sleepiness_vs_exercise():
+    # TODO strenght exercise
     from .data import cardio_dataframe as CDF
 
     c = CDF()
@@ -39,9 +41,10 @@ def plot_sleepiness_vs_exercise():
     # so sleepiness is y and kcal is x
     ldf = lag_df(x=c['kcal'], y=s['sleepy'], deltas=deltas)
 
-    # FIXME: need to set timedeltas on x axis
     # todo maybe rolling is a somewhat misleading name?
-    return rolling(x='lag', y='value', df=ldf, avgs=[]).figure
+    f = rolling(x='lag', y='value', df=ldf, avgs=[]).figure
+    f.xaxis.formatter = FuncTickFormatter(code=hhmm_formatter(unit=ldf.index.dtype))
+    return f
 
 
 @tab
@@ -66,6 +69,7 @@ def plot_sleepiness_vs_sleep():
         # TODO wtf?? so
         r = rolling(x='lag', y='value', df=ldf, avgs=[])
         r.figure.title.text = f'lag plot: sleepiness vs {col}'
+        r.figure.xaxis.formatter = FuncTickFormatter(code=hhmm_formatter(unit=ldf.index.dtype))
         ress.append(r)
     # TODO maybe allow to yield plots? then just assume column layout
     return column([r.layout for r in ress])

@@ -38,16 +38,12 @@ def _plot_sleep(df):
     p = r.figure
 
     p.extra_y_ranges = {'resp': Range1d(start=10, end=25)}
-    # Addi the second axis to the plot.
+    # Add the second axis to the plot.
     p.add_layout(LinearAxis(y_range_name='resp'), 'right')
 
     # todo make it default, I always want this
     p.legend.click_policy = 'hide'
 
-    # TODO FIXME sigh. bring it back..
-    # TODO shit. need it to reuse the figure somehow??
-    # todo eh?
-    # ERROR:bokeh.core.validation.check:E-1027 (REPEATED_LAYOUT_CHILD): The same model can't be used multiple times in a layout: Column(id='76726', ...)
     rolling(
         df=df,
         x='date', y='respiratory_rate_avg',
@@ -188,39 +184,19 @@ def _plot_all_sleep(df):
     # yeah.. visually figuring out the holiday-non holiday difference is impossible
 
 
-# todo extract correlations in a separate file?
 def _plot_sleep_correlations(df):
     # todo add holiday/non-holiday? or days from holiday? could be interesting
-    # TODO seems that is simply omits non-numeric columns?? check the dimension of grid and warn
-
-    from bokeh.models import HoverTool
-    # todo uhoh. I guess the other fields won't be available for hover?
-    hover = HoverTool(
-        tooltips=[(x, f'@{x}') for x in df.columns],
-        #formatters={
-        #    '@date'        : 'datetime', # use 'datetime' formatter for '@date' field
-        #},
-        # display a tooltip whenever the cursor is vertically in line with a glyph
-        # not sure about that here
-        # not sure if it even works??
-        # mode='vline'
-    )
-
-
     # todo reuse/determine width
     # hmm, didn't manage to quickly google how to do this
-    # todo chart_opts in hvplot.scatter_matric?
-    tools = [hover] # FIXME , 'box_select', 'lasso_select', 'tap']
     from .core.bokeh import scatter_matrix
-    sm = scatter_matrix(df, width=3000, height=3000, tools=tools)
-    # TODO autodetect and have a global render() function that can handle anything?
+    sm = scatter_matrix(df, width=3000, height=3000)
     return sm
+    # TODO autodetect and have a global render() function that can handle anything?
 
     # TODO add tools for vertical projections?
     # ugh. https://github.com/holoviz/hvplot/blob/ab43c4f68aa7e485326dea567a348b96d24ebf60/hvplot/plotting/scatter_matrix.py#L45 not sure if the needed parameters are passed?..
     # gridmatrix code? https://github.com/holoviz/holoviews/blob/5deb4a7b7f04f989fcc39bb06e657e8b6dfb4ea2/holoviews/operation/element.py#L997
     # TODO date slider? to hightligh changes over dates E.g. left-right
-    # TODO show dates on tooltips
 
 
 @tab
