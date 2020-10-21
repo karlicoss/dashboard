@@ -3,14 +3,16 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from .tabs import tabs, Tab
+from .settings import theme
 
 # I guess it kinda makes sense to dump each tab separately
 
 def render_tab(*, tab: Tab, filename: Path):
     res = tab.plotter()
 
-    from bokeh.io import save, output_file
+    from bokeh.io import save, output_file, curdoc
     output_file(filename, title=tab.name, mode='inline', root_dir=None)
+    curdoc().theme = theme
     # TODO a bit weird that it needs two function calls to save..
     save(res)
 
