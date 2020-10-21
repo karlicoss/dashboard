@@ -64,7 +64,6 @@ def _plot_manual_exercise(df):
 
         p.title.text = k
 
-        p.legend.click_policy = 'hide'
         p.y_range.start = 0
 
         if x_range is None:

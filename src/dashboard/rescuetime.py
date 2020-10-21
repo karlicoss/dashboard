@@ -43,7 +43,6 @@ def _plot_rescuetime(df):
         top = 26 * 60
         set_hhmm_axis(p.yaxis, mint=0, maxt=top, period=60)
         add_daysoff(p)
-        p.legend.click_policy = 'hide'
 
 
     pi = date_figure()

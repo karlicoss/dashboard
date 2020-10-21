@@ -40,10 +40,6 @@ def _plot_sleep(df):
     p.extra_y_ranges = {'resp': Range1d(start=10, end=25)}
     # Add the second axis to the plot.
     p.add_layout(LinearAxis(y_range_name='resp'), 'right')
-
-    # todo make it default, I always want this
-    p.legend.click_policy = 'hide'
-
     rolling(
         df=df,
         x='date', y='respiratory_rate_avg',
@@ -76,8 +72,6 @@ def plot_sleep_hrv(df):
 
     r = rm
     add_daysoff(r.figure)
-
-    r.figure.legend.click_policy = 'hide'
     return r
 
 
@@ -107,7 +101,6 @@ def plot_sleep_intervals(df):
     set_hhmm_axis(p.yaxis, mint=mint, maxt=maxt)
 
     add_daysoff(p)
-    p.legend.click_policy = 'hide'
     return p
 
 
@@ -119,10 +112,6 @@ def plot_sleep_bedtime(df):
     g7 .glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
     add_daysoff(r.figure)
-
-    # todo how to make this a default?
-    r.figure.legend.click_policy = 'hide'
-
     # TODO crap. at the moment, the return type isn't compatible with show()
     # use the same delegate trick as with setting __dict__??
     return r
@@ -134,28 +123,19 @@ def _plot_all_sleep(df):
 
     r1 = plot_sleep_bedtime(df=df)
     p1 = r1.figure
-    p1.legend.orientation = "horizontal"
-    p1.legend.location = "top_left"
-    # todo ok, this is nice.. maybe make it the default somehow?
 
     r2 = _plot_sleep(df=df)
     p2 = r2.figure
-    p2.legend.orientation = "horizontal"
-    p2.legend.location = "top_left"
     p2.x_range = p1.x_range
 
     # TODO filter non-nan values??
     r3 = plot_sleep_hrv(df=df)
     p3 = r3.figure
-    p3.legend.orientation = "horizontal"
-    p3.legend.location = "top_left"
     p3.x_range = p1.x_range
 
 
     p4 = plot_sleep_intervals(df=df)
     # todo toggle between 'absolute/relative' length
-    p4.legend.orientation = "horizontal"
-    p4.legend.location = "top_left"
     p4.x_range = p1.x_range
 
 

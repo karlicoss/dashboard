@@ -95,9 +95,6 @@ def test_rolling_errors(df):
 
     r = rolling(x='dt', y='value', df=df)
     [g, g7, g30] = r
-
-    r.figure.legend.click_policy = 'hide'
-
     # todo saving takes a while.. maybe make it configurable?
     save_plot(r.layout, name=f'rolling_errors_{_count}.html')
 # TODO somehow reuse these for 'demo' tabs?

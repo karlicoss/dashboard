@@ -435,12 +435,6 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
 
     plot.title.text = f'x: {x}, y: {y}'
     # TODO axis labels instead?
-
-    # ugh. hacky but does the trick. if too early, it complains that
-    # 'Before legend properties can be set, you must add a Legend explicitly, or call a glyph method with a legend parameter set.'
-    plot.legend.click_policy = 'hide'
-    # todo 'mute' is nice too?
-
     return ctx
     # return RollingResult(
     #     # todo maybe return orig layouts and let the parent wrap into column?
@@ -662,8 +656,6 @@ def plot_multiple(df, *, columns, **kwargs):
         p.title.text = str(grp)
         if x_range is None:
             x_range = p.x_range
-
-        p.legend.click_policy = 'hide'
 
         plots.append(p)
 

@@ -28,9 +28,6 @@ def plot_weight(df=None):
     g30.glyph.line_color = 'lightblue'
     g30.glyph.line_width = 2
 
-    # todo make it default, I always want this
-    res.figure.legend.click_policy = 'hide'
-
     # todo meh, a bit manual.. but works
     layout = res.layout
     # TODO how to make slider automatic?

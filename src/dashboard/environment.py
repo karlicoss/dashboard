@@ -33,11 +33,6 @@ def _plot_environment(df):
     g1d.glyph.line_color = 'darkblue'
     g1d.glyph.line_width = 1
 
-    # todo make it default, I always want this
-    rt.figure.legend.click_policy = 'hide'
-    rp.figure.legend.click_policy = 'hide'
-    rh.figure.legend.click_policy = 'hide'
-
     return column([
         # todo display date slider for every layout?
         DS(rt.figure, date_column='dt'),

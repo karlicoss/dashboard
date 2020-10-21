@@ -127,9 +127,6 @@ def _plot_cardio_volume(df):
 
     f = r.figure
     f.title.text = 'Cardio exercise volume'
-    f.legend.orientation = 'horizontal'
-    f.legend.location = 'top_left'
-
     return r.layout
 # note: old dashboard -- ok, plotting just endomondo stuff with old dashboard using kcal as volume proxy, matches very closely
 # TODO would be interesting to add BMR as a third plot? or just add to total somhow..
