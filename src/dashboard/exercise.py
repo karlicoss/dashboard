@@ -9,8 +9,8 @@ from bokeh.layouts import column
 from bokeh.transform import jitter
 
 from .core import tab
-from .core.bokeh import date_figure, plot_multiple, rolling
-from .core.pandas import unlocalize
+from .core.bokeh import date_figure, plot_multiple, rolling, RollingResult
+from .core.pandas import unlocalize, resample_sum
 
 import numpy as np # type: ignore
 
@@ -73,39 +73,38 @@ def _plot_manual_exercise(df):
     return column(plots)
 
 
-def _plot_strength_volume(df):
-    # TODO make a single point through which the errors get?
-    # general pattern:
-    # a) make sure the lowest level stuff is paranoid and dumps warnings/exception/spams on plot
-    # b) helpers for split_errors
-    # b) static analysis to check unused stuff
+def _plot_strength_volume(df) -> RollingResult:
     df['dt'] = unlocalize(df['dt'])
     df = df.set_index('dt')
 
-    has_err = df['error'].notna()
-    # todo split_by helper??
-    errs = df[has_err].copy()
-    df = df[~has_err]
-    # todo what happens to errors??
-    # FIXME need a helper resample method to combine string-like stuff
-    df = df.resample('D').sum()
+    df = resample_sum(df, period='D')
     # todo do not display '0' here? special option??
     # FIXME add mixed timezones to rolling tests
 
     # TODO color different points as exercise kinds?
-    res = rolling(x='dt', y='volume', df=df, avgs=['30D'])
-    return res.figure
+    r = rolling(x='dt', y='volume', df=df, avgs=['30D'])
+    f = r.figure
+    f.title.text = 'Strength exercise volume'
+    return r
 
+# TODO ugh. not sure how to combine strength and cardio volumes properly...
+# I guess they'd need matching avgs or something? ugh.
 
 # todo add cardio here as well? should be the summary of all exercise?
 @tab
 def plot_manual_exercise():
     from .data import manual_exercise_dataframe as DF
+    # TODO reuse same thingie for grouping stuff that i used for blood?
     return _plot_manual_exercise(DF())
 
 @tab
 def plot_strength_volume():
     from .data import manual_exercise_dataframe as DF
-    return _plot_strength_volume(DF())
+    return _plot_strength_volume(DF()).layout
 
-# TODO reuse same thingie for grouping stuff?
+
+# TODO make a single point through which the errors get?
+# general pattern:
+# a) make sure the lowest level stuff is paranoid and dumps warnings/exception/spams on plot
+# b) helpers for split_errors
+# b) static analysis to check unused stuff

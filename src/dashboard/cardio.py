@@ -2,8 +2,9 @@ from datetime import timedelta
 
 from bokeh.layouts import column
 
-from .core.bokeh import rolling, date_figure
 from .core import tab
+from .core.bokeh import rolling, date_figure, RollingResult
+from .core.pandas import resample_sum
 
 
 def _plot_running(df):
@@ -88,7 +89,6 @@ def _plot_cross_trainer(df):
 # TODO for data filtering -- would be nice to have some heavy, reasonable preparation in python
 # but then have a jsy interface to manipulate and do this vvv kind of filtering
 # and if it was preserved across the sessions..
-# TODO plot with all cardio exercise? not sure if would make much sense. but a table probable would..
 # TODO rolling: check that columns types are numeric? otherwise get weird errors
 
 @tab
@@ -97,8 +97,7 @@ def plot_cross_trainer():
     return _plot_cross_trainer(DF())
 
 
-# todo display breakdown by sport as well?
-def _plot_cardio_volume(df):
+def _plot_cardio_volume(df) -> RollingResult:
     # todo not sure ... should it always copy??
     df = df.copy()
     df = df.set_index('start_time')
@@ -109,28 +108,29 @@ def _plot_cardio_volume(df):
     # see https://beepb00p.xyz/heartbeats_vs_kcals.html
     df['volume'] = df['kcal']
 
+    # todo display breakdown by sport as well?
+    # unclear how... color could work, but then would need to combine it somehow??
+    # or display some sort of bars? and impose order on bars too
     # assume it's zero on non-cardio days
     # TODO need to take walking etc into the account... infer from location data?
-    # FIXME need to handle non-numeric fields carefully? at least warn they they would be dropped..
-    # def test this too
-    df = df.resample('D').sum()
+    df = resample_sum(df, period='D')
 
     r = rolling(df=df, x='start_time', y='volume', avgs=['7D', '30D'])
     [g, g7, g30] = r
     g7 .glyph.line_dash = 'dashed'
+    g7 .visible = False
     g30.glyph.line_width = 2
 
     f = r.figure
     f.title.text = 'Cardio exercise volume'
-    return r.layout
+    return r
 # note: old dashboard -- ok, plotting just endomondo stuff with old dashboard using kcal as volume proxy, matches very closely
 # TODO would be interesting to add BMR as a third plot? or just add to total somhow..
 
 @tab
 def plot_cardio_volume():
-    # FIXME cardio dataframe?
-    from .data import endomondo_dataframe as DF
-    return _plot_cardio_volume(DF())
+    from .data import cardio_dataframe as DF
+    return _plot_cardio_volume(DF()).layout
 
 
 @tab

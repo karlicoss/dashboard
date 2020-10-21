@@ -2,6 +2,7 @@ import logging
 from typing import Union, Sequence, List
 
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 Column = str
 
@@ -96,3 +97,40 @@ def lag_df(*, x, y, deltas):
 def unlocalize(s):
     # TODO maybe do some extra checks?
     return s.map(lambda d: None if d is None else d.replace(tzinfo=None))
+
+
+def resample_sum(df: pd.DataFrame, *, period) -> pd.DataFrame:
+    '''
+    Helper to handle-nonnumeric columns during aggregation.
+    By default they just get omitted, which is annoying for error handlign and debugging
+    '''
+    def agg(s):
+        # sum numeric, concat the rest
+        if is_numeric_dtype(s.dtype):
+            return s.sum()
+        else:
+            ss = s.dropna()
+            if len(ss) == 0:
+                return None
+            else:
+                # if s.name == 'duration':
+                #     breakpoint()
+                #     pass
+                return '; '.join(ss.astype(str)) # todo \n?
+
+    ds = df.resample(period)
+    return ds.aggregate(func=agg)
+
+
+def test_resample_sum():
+    df = pd.DataFrame([
+        dict(y=1   , s='a' ),
+        dict(y=4   , s='c' ),
+        dict(y=2   , s=None),
+        dict(y=None, s='d' ),
+        dict(y=None, s=None),
+    ], index=pd.date_range('2000/01/01', periods=5, freq='T'))
+    df = resample_sum(df, period='2T')
+    # TODO not sure if the last should be 0 or None..
+    assert list(df['y']) == [5, 2, 0]
+    assert list(df['s']) == ['a; c', 'd', None]
