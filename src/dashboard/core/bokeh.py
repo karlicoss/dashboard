@@ -1,4 +1,5 @@
 from datetime import date, timedelta, datetime
+import html
 from itertools import cycle, chain
 import logging
 from typing import Dict, Optional, Sequence, Union, Any
@@ -218,6 +219,19 @@ Avg = Optional[Union[str, int]]
 
 # todo better name? also have similar function for plotly
 def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_label=None, context: Optional[RollingResult]=None, **kwargs) -> RollingResult:
+    # TODO maybe use a special logging handler, so everything logged with warning level gets displayed?
+    errors = []
+
+    # todo ugh. the same HPI check would be nice..
+    tzs = set(df.index.map(lambda x: getattr(x, 'tzinfo', None))) # meh
+    if len(tzs) > 1:
+        errors.append(f'WARNING: a mixture of timezones: {tzs}. You might want to unlocalize() them first.')
+    elif len(tzs) == 1:
+        [_tz] = tzs
+        if _tz is not None:
+            # todo not really sure about that.. maybe it's okay, although UTC might be wrong as well
+            errors.append(f'WARNING: detected timezone: {_tz}. You might want to unlocalize() first.')
+
     # todo should copy df first??
     if legend_label is None:
         legend_label = y
@@ -288,35 +302,21 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
         )
 
     if len(dfe) > 0:
-        # TODO think about a better location
-        # todo hmm, not sure if Title is the best thing to use? but Label/Text didn't work from the first attempt
+        errors.append(f'Also encountered {len(dfe)} errors:')
 
+    from bokeh.models.widgets.markups import Div
+    # first a summary for the most important warnings/errors
+    # todo append later stuff as well, there are some warnings during means
+    for e in errors:
+        layouts.append(Div(
+            text=html.escape(e),
+            style={'color': 'red', 'font-weight': 'strong'},
+        ))
+
+    if len(dfe) > 0:
         # todo could even keep the 'value' erorrs and display below too.. but for now it's ok
         # ok, if it respected newlines, would be perfect
         # for now this is 'fine'...
-        # TODO monospace font?
-        # TODO just reuse the datatable??
-        for line in dfe.to_string().splitlines():
-            title = Title(text='Encountered errors:', align='left', text_color='red')
-            # plot.add_layout(title, 'below')
-            # todo the shit? it just doesn't like it when there is a table??
-        # TODO use html maybe?
-        # https://stackoverflow.com/a/54132533/706389
-       
-        # TODO FIXME size needs to conform the plot (e.g. look at weight plot)
-        # ugh. couldn't easily figure out how to toggle this??
-        # from bokeh.models import LabelSet
-        # labels = LabelSet(
-        #     source=CDS(dfe),
-        #     x=x,
-        #     y=max(df[y]) / 2, # TODO meh
-        #     text='error',
-        #     angle=3.14 / 2,
-        #     text_color='red',
-        # )
-        # plot.add_layout(labels)
-
-        # TODO sort?
 
         # todo maybe should display all points, highlight error ones as red (and it sorts anyway so easy to overview?)
         # todo would be nice to highlight the corresponding points in table/plot
