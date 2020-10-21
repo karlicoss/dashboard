@@ -207,8 +207,8 @@ class RollingResult:
 # 1. N   *   *   | error table
 # 2. Y   N   N   | set err  , goto YNY
 # 3. Y   N   Y   | plot (fake y)  , error table
-# 4. Y   Y   N   | plot
-# 5. Y   Y   Y   | plot, highlight, error table
+# 4. Y   Y   N   | plot                        ,          contribute to the avg
+# 5. Y   Y   Y   | plot, highlight, error table, does NOT contribute to the avg
 # test for it, also add to docs.
 # this should def be common with plotly
 
@@ -413,10 +413,13 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
 
     if None not in avgs:
         plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
+   
+    # only stuff without errors/warnings participates in the avg computation
+    if 'error' in df.columns: # meh
+        df = df[df['error'].isna()]
     for period in [a for a in avgs if a is not None]:
         dfy = df[[y]]
         if str(dfy.index.dtype) == 'object':
-            # todo log instead?
             logging.error(f"{dfy.dtypes}: index type is 'object'. You're likely doing something wrong")
         if 'datetime64' in str(dfy.index.dtype):
             # you're probably doing something wrong otherwise..
@@ -425,6 +428,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
             pd.to_timedelta(period)
         # TODO how to fill the missing values??
         # a sequence of consts would be a good test for it
+        # todo why would index be na at this point? probably impossible?
         dfa = dfy[dfy.index.notna()].rolling(period).mean()
         # TODO assert x in df?? or rolling wrt to x??
 
