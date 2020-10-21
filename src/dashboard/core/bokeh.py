@@ -9,6 +9,7 @@ from bokeh.models import ColumnDataSource as CDS, Text, Title, Label
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 
 # TODO FIXME also handle errors?
@@ -31,7 +32,6 @@ def scatter_matrix(
     ys = df.columns if ys is None else ys
     ys = list(reversed(ys)) # reorder to move meaningful stuff to the top left corner
 
-    from pandas.api.types import is_numeric_dtype
     isnum = lambda c: is_numeric_dtype(df.dtypes[c])
     # reorder so non-numeric is in the back
     # todo mode to drop non-numeric? not sure.. definitely can drop 'error' and datetimish?
