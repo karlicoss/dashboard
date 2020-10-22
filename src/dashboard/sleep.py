@@ -206,3 +206,5 @@ def plot_sleep_correlations_fake():
 from .core.tests import make_test
 test_sleep_all          = make_test(plot_sleep_all_fake)
 test_sleep_correlations = make_test(plot_sleep_correlations_fake)
+
+# TODO ideally I want to visualize the DF automatically? and maybe tweak specific details
