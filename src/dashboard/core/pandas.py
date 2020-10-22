@@ -80,6 +80,8 @@ def read_range_hints(df) -> RangeHints:
 # When one or more x_t+h, with negative h, are predictors of y_t, it is sometimes said that x leads y.
 # When one or more x_t+h, with positive h, are predictors of y_t, it is sometimes said that x lags  y.
 # TODO can probably implement it natively in pandas??
+# TODO I keep forgetting what this all means... need an explainer how to read x/y axis
+# e.g. effect of X on Y after lag days
 def lag_df(*, x, y, deltas):
     # TODO careful with x/y interpretation?
     rows = []
@@ -88,7 +90,7 @@ def lag_df(*, x, y, deltas):
         # min/max for negative values handling
         fun = lambda dt: y[min(dt, dt + lag): max(dt, dt + lag)].sum()
         within = pd.Series(idx.map(fun), index=idx)
-        r = x.cov(within)
+        r = x.corr(within)
         # TODO might be useful to add regline/uncertaincy.. some correlations are complete crap
         rows.append(dict(lag=lag, value=r))
     return pd.DataFrame(rows).set_index('lag')
