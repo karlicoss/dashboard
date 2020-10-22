@@ -500,7 +500,9 @@ def figure(df=None, **kwargs) -> Figure:
     )
     from bokeh.plotting import figure as F
     # todo no need to pass plot_width?
-    f = F(plot_width=2000, **kwargs)
+    kw = {'plot_width': 2000}
+    kw.update(**kwargs)
+    f = F(**kw)
     # ugh. would be nice if add_tools returned self..
     f.add_tools(hover)
     return f
