@@ -29,6 +29,17 @@ def periods(s: pd.Series, *, n: int=3):
         print(f'{p:5d} {f.index[p]:6.2f} {f.iloc[p]:7.2f}')
 
 
+def deseasonalize(df):
+    from statsmodels.tsa.seasonal import seasonal_decompose
+    # TODO meh, not sure if should be here..
+    df = df.resample('D').interpolate('linear')
+    dec = seasonal_decompose(df) # (can pass period=)
+    # todo wonder which periods is it guessing..
+    # TODO wonder how it calculates seasonal? also it's not catching yearly trends?
+    # ddd = dec.seasonal + dec.trend + dec.resid
+    return df - dec.seasonal
+
+
 def test_periods():
     ts   = np.arange(0, 1500, 1)
     vals = [
