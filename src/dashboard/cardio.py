@@ -57,7 +57,7 @@ def _plot_spinning(df):
 
 @tab
 def plot_spinning():
-    from .data import endomondo_dataframe as DF
+    from .data import all_exercise_dataframe as DF
     return _plot_spinning(DF())
 
 
@@ -135,7 +135,7 @@ def plot_cardio_volume():
 
 @tab
 def plot_running():
-    from .data import endomondo_dataframe as DF
+    from .data import all_exercise_dataframe as DF
     return _plot_running(DF())
 
 

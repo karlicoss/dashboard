@@ -69,8 +69,8 @@ def weight_dataframe():
 
 
 @df_cache
-def endomondo_dataframe():
-    import my.endomondo as E
+def all_exercise_dataframe():
+    import my.body.exercise.all as E
     return E.dataframe()
 
 
