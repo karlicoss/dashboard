@@ -87,13 +87,38 @@ def _mins(tt):
 
 def plot_sleep_intervals(df):
     df = _sleep_df(df)
+    def prettify(start, end):
+        assert (end - start).days == 0, (start, end) # just in case
+        mins = lambda d: d.time().hour * 60 + d.time().minute
 
-    ints  = df[['sleep_start', 'sleep_end']].applymap(lambda dt: None if pd.isnull(dt) else _mins(dt.time()))
+        if start.date() == end.date():
+            return mins(start), mins(end)
+        else:
+            # meh. day boundary
+            day = end.replace(hour=0, minute=0, second=0, microsecond=0)
+            if day - start > end - day:
+                return mins(start), mins(end) + 24 * 60 # meh
+            else:
+                return mins(start) - 24 * 60, mins(end)
+    def aux(row):
+        start = row['sleep_start']
+        end   = row['sleep_end']
+        if pd.isnull(start) or pd.isnull(end):
+            return None
+        (start, end) = prettify(start, end)
+        return pd.Series([start, end]) # meh
+
+    ints = df[['sleep_start', 'sleep_end']] .apply(aux, axis='columns')
+    ints = ints.rename({0: 'sleep_start', 1: 'sleep_end'}, axis='columns')
+
     # todo maybe instead plot angled lines? then won't need messing with minutes at all? Although still useful to keep
     p = date_figure()
-    mint = _mins(time(22, 0))
-    maxt = _mins(time(11, 0))
+    # ugh. very messy
+    mint = -24 * 60 - 10 * 60
+    maxt =  24 * 60 + 10 * 60
     # TODO need to handle nans/errors?
+
+    # TODO not convinced 'date' quite works here...
     p.vbar(source=CDS(ints), x='date', width=timedelta(1), bottom='sleep_start', top='sleep_end', color='black', alpha=0.1)
 
     from .core.bokeh import set_hhmm_axis
