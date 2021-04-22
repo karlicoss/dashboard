@@ -1,9 +1,12 @@
-import logging
 from pathlib import Path
 from typing import Iterable, Optional
 
 from .tabs import tabs, Tab
 from .settings import theme
+
+
+from .core.common import logger
+
 
 # I guess it kinda makes sense to dump each tab separately
 
@@ -25,11 +28,11 @@ def run(to: Path, tab_name: Optional[str]=None, debug: bool=False) -> Iterable[E
             continue
 
         if tab_name is not None and tab.name != tab_name:
-            logging.info('skipping %s', tab.name)
+            logger.info('skipping %s', tab.name)
             # todo error if no matches??
             continue
 
-        logging.info('rendering %s', tab.name)
+        logger.info('rendering %s', tab.name)
         fname = to / (tab.name + '.html')
 
         try:
@@ -44,7 +47,7 @@ def run(to: Path, tab_name: Optional[str]=None, debug: bool=False) -> Iterable[E
                 res = render_tab(tab=tab, filename=fname)
         except Exception as e:
             # TODO make it defensive? if there were any errors, backup old file, don't overwrite? dunno.
-            logging.exception(e)
+            logger.exception(e)
 
             import html
             import traceback
@@ -56,9 +59,7 @@ def run(to: Path, tab_name: Optional[str]=None, debug: bool=False) -> Iterable[E
 
 
 
-def main():
-    logging.basicConfig(level=logging.INFO)
-
+def main() -> None:
     from argparse import ArgumentParser as P
     p = P()
     p.add_argument('--to', type=Path, required=True)
@@ -69,9 +70,9 @@ def main():
     # todo pass function names to render? seems easier than tab names? or either?
     errors = list(run(to=args.to, tab_name=args.tab, debug=args.debug))
     if len(errors) > 0:
-        logging.error('Had %d errors while rendering', len(errors))
+        logger.error('Had %d errors while rendering', len(errors))
         for e in errors:
-            logging.exception(e)
+            logger.exception(e)
         import sys
         sys.exit(1)
 
