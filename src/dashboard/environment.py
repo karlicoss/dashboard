@@ -12,7 +12,12 @@ def _plot_environment(df):
     # TODO need to agree on more consistent colors..
     # todo should be fixed/asserted in hpi?
     df = df.sort_index()
+    import pandas as pd
+    # FIXME wtf??? otherwise it fails with 'window is not an integer' or something
+    # maybe it's related to the problem with broken [:] indexing while attaching temperature to my.body.sleep.common
+    df.index = pd.to_datetime(df.index, utc=True)
     rt = rolling(x='dt', y='temp'    , df=df, color='red' , legend_label='Temperature', avgs=['10min', '1D'])
+
     [g, g1h, g1d] = rt.plots
     g.glyph.marker = 'dot'
     g1h.glyph.line_width = 1
