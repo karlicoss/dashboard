@@ -1,13 +1,13 @@
 # see https://github.com/karlicoss/pymplate for up-to-date reference
 
 
-from setuptools import setup, find_packages # type: ignore
+from setuptools import setup, find_namespace_packages # type: ignore
 
 
-def main():
-    pkgs = find_packages('src') # todo find_namespace_packages??
-    pkg = 'dashboard'
-    assert pkg in pkgs
+def main() -> None:
+    # works with both ordinary and namespace packages
+    pkgs = find_namespace_packages('src')
+    pkg = min(pkgs)
     setup(
         name=pkg,
         use_scm_version={
@@ -45,20 +45,17 @@ def main():
         extras_require={
             'testing': [
                 'pytest',
+                'ruff',
+                'mypy',
+                'lxml',
+
                 'hypothesis',
                 'faker',
 
                 'HPI @ git+https://github.com/karlicoss/HPI',
                 # uncomment to use local HPI
                 # 'HPI @ git+file:///DUMMY/path/to/local/hpi@branch',
-
-                # HPI modules dependencies
-                'rescuexport @ git+https://github.com/karlicoss/rescuexport',
-                'emfitexport @ git+https://github.com/karlicoss/emfitexport',
-                'endoexport  @ git+https://github.com/karlicoss/endoexport' ,
-                'matplotlib', # todo emfitexport dependency for now, get rid later
             ],
-            'linting': ['pytest', 'hypothesis', 'mypy'],
         },
     )
 

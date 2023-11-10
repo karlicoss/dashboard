@@ -30,7 +30,7 @@ def periods(s: pd.Series, *, n: int=3):
 
 
 def deseasonalize(df):
-    from statsmodels.tsa.seasonal import seasonal_decompose
+    from statsmodels.tsa.seasonal import seasonal_decompose  # type: ignore[import-untyped]
     # TODO meh, not sure if should be here..
     df = df.resample('D').interpolate('linear')
     dec = seasonal_decompose(df) # (can pass period=)
