@@ -7,21 +7,27 @@ on:
     tags: 'v[0-9]+.*' # only trigger on 'release' tags for PyPi
     # Ideally I would put this in the pypi job... but github syntax doesn't allow for regexes there :shrug:
     # P.S. fuck made up yaml DSLs.
-    # TODO cron?
+  pull_request: # needed to trigger on others' PRs
+  # Note that people who fork it need to go to "Actions" tab on their fork and click "I understand my workflows, go ahead and enable them".
+  workflow_dispatch: # needed to trigger workflows manually
+    # todo cron?
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
 
-env:
-  # useful for scripts & sometimes tests to know
-  CI: true
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
-        platform: [ubuntu-latest]
-        python-version: [3.8]
-        # TODO add them back later
-        # platform: [ubuntu-latest, macos-latest] # TODO windows-latest??
-        # python-version: [3.6, 3.7, 3.8]
+        platform: [ubuntu-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12']
+        # vvv just an example of excluding stuff from matrix
+        # exclude: [{platform: macos-latest, python-version: '3.6'}]
 
     runs-on: ${{ matrix.platform }}
 
@@ -29,62 +35,31 @@ jobs:
     # ugh https://github.com/actions/toolkit/blob/main/docs/commands.md#path-manipulation
     - run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
+        fetch-depth: 0  # nicer to have all git history when debugging/for tests
 
-    # uncomment for SSH debugging
-    # - uses: mxschmitt/action-tmate@v3
+    - uses: mxschmitt/action-tmate@v3
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
-    - run: .ci/run
+    # explicit bash command is necessary for Windows CI runner, otherwise it thinks it's cmd...
+    - run: bash .ci/run
 
-    # todo not sure if need considering that I'm uploading artifacts?
-    # - uses: actions/upload-artifact@v2
-    #   with:
-    #     name: test-outputs
-    #     path: test-outputs/
+    - if: matrix.platform == 'ubuntu-latest'  # no need to compute coverage for other platforms
+      uses: actions/upload-artifact@v3
+      with:
+        name: .coverage.mypy_${{ matrix.platform }}_${{ matrix.python-version }}
+        path: .coverage.mypy/
 
-    # TODO: only run for master pushes? not sure
-    - name: Deploy plots
+    - if: github.event_name != 'pull_request' && github.event.ref == 'refs/heads/master'
+      name: deploy plots
       uses: peaceiris/actions-gh-pages@v3
       with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./test-outputs
           # todo keep_files? if I create a demo page or something
-
-  # for now isn't needed
-  # pypi:
-  #   runs-on: ubuntu-latest
-  #   needs: [build] # add all other jobs here
-
-  #   steps:
-  #   - run: echo "::add-path::$HOME/.local/bin"
-
-  #   - uses: actions/setup-python@v1
-  #     with:
-  #       python-version: 3.7
-
-  #   - uses: actions/checkout@v2
-  #     with:
-  #       submodules: recursive
-
-  #   - name: 'release to test pypi'
-  #     # always deploy merged master to test pypi
-  #     if: github.event.ref == 'refs/heads/master'
-  #     env:
-  #       TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD_TEST }}
-  #     run: pip3 install --user wheel twine && scripts/release --test
-
-  #   - name: 'release to pypi'
-  #     # always deploy tags to release pypi
-  #     # NOTE: release tags are guarded by on: push: tags on the top
-  #     if: startsWith(github.event.ref, 'refs/tags')
-  #     env:
-  #       TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-  #     run: pip3 install --user wheel twine && scripts/release
-
-# todo generate mypy coverage artifacts?

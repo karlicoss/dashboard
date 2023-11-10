@@ -4,7 +4,7 @@ Subjectiveness sleepiness, felt during the day
 from datetime import timedelta
 
 from bokeh.layouts import column
-from bokeh.models import FuncTickFormatter
+from bokeh.models import CustomJSTickFormatter
 
 from .core.bokeh import scatter_matrix, rolling, hhmm_formatter
 from .core.pandas import unlocalize, lag_df
@@ -43,7 +43,7 @@ def plot_sleepiness_vs_exercise():
 
     # todo maybe rolling is a somewhat misleading name?
     f = rolling(x='lag', y='value', df=ldf, avgs=[]).figure
-    f.xaxis.formatter = FuncTickFormatter(code=hhmm_formatter(unit=ldf.index.dtype))
+    f.xaxis.formatter = CustomJSTickFormatter(code=hhmm_formatter(unit=ldf.index.dtype))
     return f
 
 
@@ -69,7 +69,7 @@ def plot_sleepiness_vs_sleep():
         # TODO wtf?? so
         r = rolling(x='lag', y='value', df=ldf, avgs=[])
         r.figure.title.text = f'lag plot: sleepiness vs {col}'
-        r.figure.xaxis.formatter = FuncTickFormatter(code=hhmm_formatter(unit=ldf.index.dtype))
+        r.figure.xaxis.formatter = CustomJSTickFormatter(code=hhmm_formatter(unit=ldf.index.dtype))
         ress.append(r)
     # TODO maybe allow to yield plots? then just assume column layout
     return column([r.layout for r in ress])

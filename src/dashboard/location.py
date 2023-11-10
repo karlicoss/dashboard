@@ -17,16 +17,16 @@ def merc(lat: float, lon: float) -> Tuple[float, float]:
     y = 180.0/math.pi * math.log(math.tan(math.pi/4.0 + lat * (math.pi/180.0)/2.0)) * scale
     return (x, y)
 
-import pandas as pd # type: ignore
+import pandas as pd
 
 from .data import locations_dataframe
 
 # todo might need to lru_cache so reloading works
 
-from bokeh.models import ColumnDataSource as CDS # type: ignore
-from bokeh.plotting import figure, show # type: ignore
+from bokeh.models import ColumnDataSource as CDS
+from bokeh.plotting import figure, show
 # https://stackoverflow.com/questions/50680820/bokeh-openstreetmap-tile-not-visible-in-all-browsers
-from bokeh.tile_providers import OSM, get_provider # type: ignore
+from bokeh.tile_providers import OSM, get_provider  # type: ignore[attr-defined]  # TODO fix later
 
 # TODO wonder if it's possible to cache the tiles?
 tile_provider = get_provider(OSM)

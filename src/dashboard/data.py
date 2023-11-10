@@ -7,6 +7,8 @@ from functools import lru_cache
 from itertools import islice
 from pathlib import Path
 
+from my.core.cfg import tmp_config
+
 
 def df_cache(f):
     from functools import wraps
@@ -30,7 +32,7 @@ def locations():
 
 @df_cache
 def locations_dataframe(limit=None):
-    import pandas as pd # type: ignore
+    import pandas as pd
     locs = locations()
     idf = pd.DataFrame(islice((l._asdict() for l in locs), 0, limit))
     df = idf.set_index('dt')
@@ -62,9 +64,7 @@ def blood_dataframe():
 # TODO figure out when I need caching and when I don't. ideally, HPI can take care of it
 @df_cache
 def weight_dataframe():
-    # import my.body.weight as W
-    # TODO use an overlay instead. also document how to do this?
-    import my.private.weight as W # type: ignore
+    import my.body.weight as W
     return W.dataframe()
 
 
@@ -127,9 +127,15 @@ def no_bluemaestro():
 @contextmanager
 def no_tz():
     # todo use something more meaningful?
-    hack_config('google'  , takeout_path='')
-    hack_config('location', home=(51.5074, 0.1278))
-    yield
+    class config:
+        class google:
+            takeout_path = ''
+        class location:
+            home = (51.5074, 0.1278)
+            class via_ip:
+                pass
+    with tmp_config(modules='my.google|my.location', config=config):
+        yield
 
 
 @contextmanager
@@ -146,11 +152,15 @@ def fake_emfit(*args, **kwargs):
     import pytz
     # todo get rid of timezone
     # todo get rid of excluded_sids, that should be hacked via the config
-    hack_config('emfit', export_path=[], timezone=pytz.timezone('Europe/London'), excluded_sids=[])
-
-    import my.emfit as M
-    with M.fake_data(*args, **kwargs):
-        yield
+    class config:
+        class emfit:
+            export_path = ()
+            timezone = pytz.timezone('Europe/London')
+            excluded_sids = []
+    with tmp_config(modules='my.emfit', config=config):
+        import my.emfit as M
+        with M.fake_data(*args, **kwargs):
+            yield
 
 @contextmanager
 def fake_jawbone(*args, **kwargs):
@@ -175,12 +185,14 @@ def fake_sleep(*args, **kwargs):
 
 @contextmanager
 def fake_endomondo(*args, **kwargs):
-    # todo hmm, when using export_path=[] here, getting
-    # had an error ValueError: mutable default <class 'list'> for field export_path is not allowed: use default_factory
-    hack_config('endomondo', export_path=())
-
-    import my.endomondo as M
-    with M.fake_data(*args, **kwargs):
-        yield
+    class config:
+        class endomondo:
+            export_path = ()
+        class runnerup:
+            export_path = ()
+    with tmp_config(modules='my.endomondo|my.runnerup', config=config):
+        import my.endomondo as M
+        with M.fake_data(*args, **kwargs):
+            yield
 
 # todo maybe this ^^ also belongs to HPI?

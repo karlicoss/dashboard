@@ -2,6 +2,7 @@
 Non-cardio exercise: resistance/strength training, etc
 '''
 from itertools import cycle, chain
+from typing import Any, Dict
 
 from bokeh.models import ColumnDataSource as CDS
 from bokeh.palettes import Category20 as palletes
@@ -12,7 +13,7 @@ from .core import tab
 from .core.bokeh import date_figure, plot_multiple, rolling, RollingResult
 from .core.pandas import unlocalize, resample_sum
 
-import numpy as np # type: ignore
+import numpy as np
 
 
 def _plot_manual_exercise(df):
@@ -51,20 +52,21 @@ def _plot_manual_exercise(df):
         color = colors[k]
         # TODO add some x jitter to declutter?
         # need to preserve the order though? I guess need to group
-        p = date_figure(df, height=150, x_range=x_range)
-        p.scatter(x='dt', y='reps'  , source=CDS(edf), legend_label='reps'  , color=color)
+        m_x_range: Dict[str, Any] = {} if x_range is None else dict(x_range=x_range)
+        p = date_figure(df, height=150, **m_x_range)
+        p.scatter(x='dt', y='reps', source=CDS(edf), legend_label='reps', color=color)
 
         from bokeh.models import LinearAxis, Range1d
-        maxy = np.nanmax(edf['volume'] * 1.1) # TODO meh
-        if not np.isnan(maxy): # I guess doesn't have volume?
-            p.extra_y_ranges = {'volume': Range1d(start=0.0, end=maxy)}
+        maxy = np.nanmax(edf['volume'] * 1.1)  # TODO meh
+        if not np.isnan(maxy):  # I guess doesn't have volume?
+            p.extra_y_ranges = {'volume': Range1d(start=0.0, end=maxy)}  # type: ignore[assignment]
             # add the second axis to the plot.
             p.add_layout(LinearAxis(y_range_name='volume'), 'right')
             p.scatter(x='dt', y='volume', source=CDS(edf), legend_label='volume', color='black', size=2, y_range_name='volume')
 
-        p.title.text = k
+        p.title.text = k  # type: ignore[attr-defined]
 
-        p.y_range.start = 0
+        p.y_range.start = 0 # type: ignore[attr-defined]
 
         if x_range is None:
             x_range = p.x_range

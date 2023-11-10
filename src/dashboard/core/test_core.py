@@ -13,11 +13,11 @@ from hypothesis.extra.pandas import columns, column, data_frames, range_indexes
 import hypothesis.strategies as st
 
 
-def hash_df(df) -> str:
-    # https://stackoverflow.com/questions/31567401/get-the-same-hash-value-for-a-pandas-dataframe-each-time#comment89018817_47800021
-    import hashlib
-    from pandas.util import hash_pandas_object
-    return hashlib.sha256(pd.util.hash_pandas_object(df, index=True).values).hexdigest()
+# def hash_df(df) -> str:
+#     # https://stackoverflow.com/questions/31567401/get-the-same-hash-value-for-a-pandas-dataframe-each-time#comment89018817_47800021
+#     import hashlib
+#     from pandas.util import hash_pandas_object
+#     return hashlib.sha256(pd.util.hash_pandas_object(df, index=True).values).hexdigest()
 
 
 # from hypothesis.strategies import text
@@ -58,7 +58,7 @@ _count = 0
 @given(data_frames(
     index=range_indexes(min_size=10),
     columns=[
-        column('dt'   , dtype=datetime),
+        column('dt'   , dtype='datetime64[ns]'),
         column('value', dtype=float   ),
     ],
     rows=st.tuples(
@@ -113,7 +113,7 @@ import string
 @settings(**SETTINGS, max_examples=20)
 @given(data_frames(
     columns=[
-        column('dt'    , dtype=datetime),
+        column('dt'    , dtype='datetime64[ns]'),
         column('value1', dtype=float   ),
         column('value2', dtype=float   ),
         column('value3', dtype=float   ),

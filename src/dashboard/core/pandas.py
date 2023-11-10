@@ -115,13 +115,12 @@ def resample_sum(df: pd.DataFrame, *, period) -> pd.DataFrame:
             if len(ss) == 0:
                 return None
             else:
-                # if s.name == 'duration':
-                #     breakpoint()
-                #     pass
-                return '; '.join(ss.astype(str)) # todo \n?
+                return '; '.join(ss.astype(str))  # todo \n?
 
     ds = df.resample(period)
-    return ds.aggregate(func=agg)
+    res = ds.aggregate(func=agg)
+    assert isinstance(res, pd.DataFrame), res  # make mypy happy
+    return res
 
 
 def test_resample_sum():

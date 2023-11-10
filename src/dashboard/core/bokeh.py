@@ -2,11 +2,11 @@ from datetime import date, timedelta, datetime
 import html
 from itertools import cycle, chain
 import logging
-from typing import Dict, Optional, Sequence, Union, Any
+from typing import Dict, Optional, Sequence, Union, Optional
 import warnings
 
 from bokeh.layouts import gridplot, column
-from bokeh.models import ColumnDataSource as CDS, Text, Title, Label
+from bokeh.models import ColumnDataSource as CDS
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ from pandas.api.types import is_numeric_dtype
 def scatter_matrix(
         df,
         *,
-        xs: Sequence[str]=None, ys: Sequence[str]=None,
+        xs: Optional[Sequence[str]]=None, ys: Optional[Sequence[str]]=None,
         width=None, height=None,
         regression=True,
         **kwargs,
@@ -39,7 +39,6 @@ def scatter_matrix(
     xs = list(sorted(xs, key=isnum, reverse=True))
     ys = list(sorted(ys, key=isnum, reverse=True))
 
-    from bokeh.models import Label
     # TODO not sure I wanna reuse axis?
     def make(xc: str, yc: str):
         p = figure(df=df)
@@ -65,7 +64,7 @@ def scatter_matrix(
     from bokeh.layouts import gridplot
     w1 = None if width  is None else width  // min(len(xs), len(ys))
     h1 = None if height is None else height // min(len(xs), len(ys))
-    grid_res = gridplot(grid, plot_width=w1, plot_height=h1)
+    grid_res = gridplot(grid, width=w1, height=h1)
 
     # TODO might be useful to include/exclude specific cols (e.g. datetime) while keeping them in annotations
 
@@ -77,7 +76,7 @@ def scatter_matrix(
         return grid_res
 
     # todo this would be need for plotly as well?
-    import statsmodels.formula.api as smf # type: ignore
+    import statsmodels.formula.api as smf  # type: ignore[import-untyped]
 
     for plot in chain.from_iterable(grid):
         gs = plot.renderers
@@ -92,9 +91,9 @@ def scatter_matrix(
             # diagonal thing, e.g. histogram. compute some stats??
             continue
 
-        with pd.option_context('mode.use_inf_as_null', True):
-            # FIXME proper error handling, display number of dropped items?
-            dd = df[[xx, yy]].dropna() # otherwise from_scatter fails
+        # FIXME proper error handling, display number of dropped items?
+        df = df.replace([np.inf, -np.inf], np.nan)  # FIXME meh. only happens during test?
+        dd = df[[xx, yy]].dropna()  # otherwise from_scatter fails
         # todo would be nice to display stats on the number of points dropped
 
 
@@ -128,7 +127,7 @@ def scatter_matrix(
 
         # todo need to add various regression properties, like intercept, etc
         # TODO hopefuly this overlays correctly?? not sure about nans, again
-        from bokeh.models import Slope
+        from bokeh.models import Slope  # type: ignore[attr-defined]  # works in runtime, seems like annotations issue?
         sl = Slope(gradient=slope, y_intercept=intercept, line_color='green', line_width=3)
         plot.add_layout(sl)
         add_text(
@@ -180,7 +179,7 @@ def test_scatter_matrix_demo() -> None:
 
 from bokeh.layouts import LayoutDOM
 from bokeh.models import Plot
-from bokeh.plotting import Figure
+from bokeh.plotting import figure as Figure  # FIXME
 from typing import Sequence, List
 from dataclasses import dataclass
 
@@ -310,7 +309,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
     for e in errors:
         layouts.append(Div(
             text=html.escape(e),
-            style={'color': 'red', 'font-weight': 'strong'},
+            styles={'color': 'red', 'font-weight': 'strong'},
         ))
 
     if len(dfe) > 0:
@@ -344,7 +343,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
                 width = 15 # in characters
                 # for fixed width types, we can have something kind of reasonable
                 if str(t).startswith('float'):
-                    l = df[c].dropna().map(str).str.len().max()
+                    l = df[c].dropna().astype(str).str.len().max()
                     width = 4 if np.isnan(l) else l
 
                 if str(t).startswith('datetime'):
@@ -412,7 +411,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
         warnings.warn(f'No data points for {df}, empty plot!')
 
     if None not in avgs:
-        plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))
+        plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))  # type: ignore[arg-type]
    
     # only stuff without errors/warnings participates in the avg computation
     if 'error' in df.columns: # meh
@@ -437,7 +436,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
         # todo different style by default? thicker line? not sure..
         plots.append(plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs))
 
-    plot.title.text = f'x: {x}, y: {y}'
+    plot.title.text = f'x: {x}, y: {y}'  # type: ignore[attr-defined]
     # TODO axis labels instead?
     return ctx
     # return RollingResult(
@@ -474,8 +473,8 @@ def figure(df=None, **kwargs) -> Figure:
             fmt = 'datetime'
             # todo %T only if it's actually datetime, not date? not sure though...
             tfmt += '{%F %a %T}'
-        elif 'timedelta64' in str(t): # also meh
-            fmt = CustomJSHover(code='const tick = value; ' + hhmm_formatter(unit=t))
+        elif 'timedelta64' in str(t):  # also meh
+            fmt = CustomJSHover(code='const tick = value; ' + hhmm_formatter(unit=t))  # type: ignore[assignment]
             tfmt += '{custom}'
             # eh, I suppose ok for now. would be nice to reuse in the tables...
         elif c == 'error':
@@ -499,8 +498,9 @@ def figure(df=None, **kwargs) -> Figure:
         mode='vline'
     )
     from bokeh.plotting import figure as F
-    # todo no need to pass plot_width?
-    kw = {'plot_width': 2000}
+    # TODO this kinda expands it to fullscreen
+    # ugh would be nice to automatically expand to fullscreen?
+    kw = {'width': 2000}
     kw.update(**kwargs)
     f = F(**kw)
     # ugh. would be nice if add_tools returned self..
@@ -555,7 +555,7 @@ def date_slider(p, *, dates=None, date_column='dt'):
     # todo not sure if should use today?
     edate += timedelta(days=5)
 
-    from bokeh.models.widgets import DateRangeSlider # type: ignore
+    from bokeh.models.widgets import DateRangeSlider
     ds = DateRangeSlider(
         title="Date Range: ",
         start=sdate,
@@ -563,7 +563,7 @@ def date_slider(p, *, dates=None, date_column='dt'):
         value=(sdate, edate),
         step=1,
     )
-    from bokeh.models import CustomJS # type: ignore
+    from bokeh.models import CustomJS
 
     # TODO hmm. so, js won't be able to call into python in Jupyter...
     # see https://docs.bokeh.org/en/latest/docs/gallery/slider.html
@@ -594,7 +594,7 @@ def plot_multiple(df, *, columns, **kwargs):
     # https://stackoverflow.com/questions/30791839/is-there-an-easy-way-to-group-columns-in-a-pandas-dataframe
     
     # todo make configurable
-    from bokeh.palettes import Dark2_5 as palette # type: ignore
+    from bokeh.palettes import Dark2_5 as palette
 
     from .pandas import read_group_hints, read_range_hints
     groups = read_group_hints(df)
@@ -611,7 +611,7 @@ def plot_multiple(df, *, columns, **kwargs):
     for grp in groups:
         # todo add source to annotation?
         # todo rely on kwargs for date x axis?
-        p = date_figure(x_range=x_range, **kwargs)
+        p = date_figure(**({} if x_range is None else dict(x_range=x_range)), **kwargs)
 
         # todo color rainbow??
         for f, color in zip(grp, cycle(palette)):
@@ -659,7 +659,7 @@ def plot_multiple(df, *, columns, **kwargs):
                 )
 
 
-        p.title.text = str(grp)
+        p.title.text = str(grp)  # type: ignore[attr-defined]  # this works, but mypy complains..
         if x_range is None:
             x_range = p.x_range
 
@@ -675,8 +675,8 @@ def set_hhmm_axis(axis, *, mint: int, maxt: int, period: int=30) -> None:
     # FIXME infer mint/maxt
     ticks = list(range(mint, maxt, period))
     axis.ticker = FixedTicker(ticks=ticks)
-    from bokeh.models import FuncTickFormatter
-    axis.formatter = FuncTickFormatter(code=hhmm_formatter(unit=int))
+    from bokeh.models import CustomJSTickFormatter
+    axis.formatter = CustomJSTickFormatter(code=hhmm_formatter(unit=int))
 
 
 # TODO use J for defensive js?
