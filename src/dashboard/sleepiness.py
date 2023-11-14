@@ -6,6 +6,8 @@ from datetime import timedelta
 from bokeh.layouts import column
 from bokeh.models import CustomJSTickFormatter
 
+import pandas as pd
+
 from .core.bokeh import scatter_matrix, rolling, hhmm_formatter
 from .core.pandas import unlocalize, lag_df
 from .core import tab
@@ -55,7 +57,8 @@ def plot_sleepiness_vs_sleep():
     sdf = sdf[sdf['error'].isna()]
     # todo not sure... maybe sleep start/end would be better? or just median??
     sdf = sdf.set_index('date')
-    # sdf.index = unlocalize(sdf.index)
+    sdf.index = pd.to_datetime(sdf.index)  # without it, getting TypeError: Cannot compare Timestamp with datetime.date.
+    # sdf.index = unlocalize(sdf.index)  # TODO what was that for?
 
     s = _sleepy_df()
     sdf = sdf[sdf.index >= min(s.index)]
