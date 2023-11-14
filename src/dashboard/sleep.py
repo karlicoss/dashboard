@@ -144,6 +144,8 @@ def plot_sleep_bedtime(df):
 
 # todo woudl be nice to hightlight hovered datapoints??
 def _plot_all_sleep(df):
+    df = _fix_NaT_datetime(df)
+
     from .core.bokeh import date_slider
 
     r1 = plot_sleep_bedtime(df=df)
@@ -189,7 +191,17 @@ def _plot_all_sleep(df):
     # yeah.. visually figuring out the holiday-non holiday difference is impossible
 
 
+def _fix_NaT_datetime(df):
+    # ugh. some of these contain NaT (not a time), and this causes bokeh to crash during rendering??
+    # getting "Out of range float values are not JSON compliant: nan"
+    # they aren't even used during rendering, but I think bokeh just serializes the whole df?
+    # FIXME would be nice to fix this as this prevents displaying errors over in plots
+    return df.dropna(subset=['sleep_start', 'sleep_end'])
+
+
 def _plot_sleep_correlations(df):
+    df = _fix_NaT_datetime(df)
+
     # todo add holiday/non-holiday? or days from holiday? could be interesting
     # todo reuse/determine width
     # hmm, didn't manage to quickly google how to do this
