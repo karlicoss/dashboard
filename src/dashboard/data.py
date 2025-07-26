@@ -107,7 +107,7 @@ def hack_config(name: str, **kwargs):
     # todo ugh. annoying that we need this boilerplate..
     # otherwise it would fail when the module is imported
     # todo document that in the github issue?
-    from my.cfg import config
+    from my.cfg import config  # type: ignore[attr-defined]
     class user_config:
         pass
     for k, v in kwargs.items():

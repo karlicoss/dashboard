@@ -25,7 +25,7 @@ def plot_weight(df=None):
     res = rolling(x='dt', y='weight', df=df, color='blue', legend_label='Weight')
     [g, g7, g30] = res.plots
     g7 .glyph.line_width = 2
-    g7 .visible = False  # type: ignore[assignment]  # ugh, bokeh type is Bool because it's a model or something??
+    g7 .visible = False
     g30.glyph.line_color = 'lightblue'
     g30.glyph.line_width = 2
 

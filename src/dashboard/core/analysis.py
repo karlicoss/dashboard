@@ -20,7 +20,7 @@ def fourier(s: pd.Series) -> pd.Series:
 
 
 def periods(s: pd.Series, *, n: int=3):
-    from scipy.signal import find_peaks # type: ignore
+    from scipy.signal import find_peaks # type: ignore[import-untyped]
     f = fourier(s)
     f.index = 1 / f.index
     pidx, _ = find_peaks(list(f))

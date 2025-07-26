@@ -59,14 +59,16 @@ def _plot_manual_exercise(df):
         from bokeh.models import LinearAxis, Range1d
         maxy = np.nanmax(edf['volume'] * 1.1)  # TODO meh
         if not np.isnan(maxy):  # I guess doesn't have volume?
-            p.extra_y_ranges = {'volume': Range1d(start=0.0, end=maxy)}  # type: ignore[assignment]
+            p.extra_y_ranges = {'volume': Range1d(start=0.0, end=maxy)}
             # add the second axis to the plot.
             p.add_layout(LinearAxis(y_range_name='volume'), 'right')
             p.scatter(x='dt', y='volume', source=CDS(edf), legend_label='volume', color='black', size=2, y_range_name='volume')
 
-        p.title.text = k  # type: ignore[attr-defined]
+        assert p.title is None, p.title
+        p.title = k
 
-        p.y_range.start = 0 # type: ignore[attr-defined]
+        # TODO need to assert it's a Range1D? not sure
+        p.y_range.start = 0  # type: ignore[attr-defined]
 
         if x_range is None:
             x_range = p.x_range
@@ -86,7 +88,8 @@ def _plot_strength_volume(df) -> RollingResult:
     # TODO color different points as exercise kinds?
     r = rolling(x='dt', y='volume', df=df, avgs=['30D'])
     f = r.figure
-    f.title.text = 'Strength exercise volume'
+    assert f.title is None, f.title
+    f.title = 'Strength exercise volume'
     return r
 
 # TODO ugh. not sure how to combine strength and cardio volumes properly...
