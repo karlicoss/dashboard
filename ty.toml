@@ -1,0 +1,5 @@
+[src]
+exclude = [
+    "./bokeh_server.py",  # TODO later
+    "notebooks/",
+]

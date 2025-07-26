@@ -69,7 +69,8 @@ def plot(day: str, df):
         x_range=x_range,
         y_range=y_range,
     )
-    p.add_tile(xyz.OpenStreetMap.Mapnik)  # TODO double check it?
+    # TODO double check it?
+    p.add_tile(xyz.OpenStreetMap.Mapnik)  # ty: ignore[unresolved-attribute]
 
     p.circle(x='mlon', y='mlat', radius=10, fill_color='blue', fill_alpha=0.8, source=CDS(df))
 

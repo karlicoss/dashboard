@@ -47,7 +47,7 @@ def sleep_dataframe():
 
 @df_cache
 def sleepiness_dataframe():
-    import my.body.sleep.sleepiness as S
+    import my.body.sleep.sleepiness as S  # ty: ignore[unresolved-import]
     df = S.dataframe()
     # TODO not sure if should do it here?
     # TODO stick nans closer to the original positions?
@@ -88,7 +88,7 @@ def cross_trainer_dataframe():
 
 @df_cache
 def manual_exercise_dataframe():
-    import my.body.exercise.manual as M
+    import my.body.exercise.manual as M  # ty: ignore[unresolved-import]
     return M.dataframe()
 
 
@@ -169,7 +169,7 @@ def fake_jawbone(*args, **kwargs):
 
     import my.jawbone as M
     try:
-        M.load_sleeps = lambda: []
+        M.load_sleeps = lambda: []  # ty: ignore[invalid-assignment]
         yield
     finally:
         from importlib import reload

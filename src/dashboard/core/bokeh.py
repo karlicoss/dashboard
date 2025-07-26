@@ -643,7 +643,7 @@ def plot_multiple(df, *, columns, **kwargs):
                 # p.add_layout(normal)
 
 
-                extras: Dict[str, Optional[str]] = dict(color=None)
+                extras: Mapping[str, Optional[str]] = dict(color=None)
                 col = rh.color
                 if col is None:
                     col = color
