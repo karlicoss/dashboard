@@ -73,3 +73,11 @@ jobs:
         flags: mypy-${{ matrix.python-version }}
         files: .coverage.mypy/cobertura.xml
 
+    # only deploy plots for latest python version
+    - if: github.event_name == 'push' && github.event.ref == format('refs/heads/{0}', github.event.repository.master_branch) && matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.13'
+      name: deploy plots
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./test-outputs
+        # todo keep_files? if I create a demo page or something
