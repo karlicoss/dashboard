@@ -23,14 +23,10 @@ from .data import locations_dataframe
 
 # todo might need to lru_cache so reloading works
 
-from bokeh.models import ColumnDataSource as CDS
+from bokeh.models import ColumnDataSource as CDS, Range
 from bokeh.plotting import figure, show
-# https://stackoverflow.com/questions/50680820/bokeh-openstreetmap-tile-not-visible-in-all-browsers
-from bokeh.tile_providers import OSM, get_provider  # type: ignore[attr-defined]  # TODO fix later
 
-# TODO wonder if it's possible to cache the tiles?
-tile_provider = get_provider(OSM)
-
+import xyzservices.providers as xyz  # type: ignore[import-untyped] #  tile providers
 
 def plot(day: str, df):
 #    from bokeh.io import output_notebook
@@ -55,14 +51,14 @@ def plot(day: str, df):
     # p = figure(x_range=(-2000000, 6000000), y_range=(-1000000, 7000000),
 
     # todo set some reasonable minimum span? otherwise if there is no movement, almost nothing is displayed
-    x_range = min(df['mlon']) - 100, max(df['mlon']) + 100
-    y_range = min(df['mlat']) - 100, max(df['mlat']) + 100
+    x_range = Range(min(df['mlon']) - 100, max(df['mlon']) + 100)
+    y_range = Range(min(df['mlat']) - 100, max(df['mlat']) + 100)
 
     # print(x_range, y_range)
     # print(max(df['mlon']), min(df['mlon']))
 
     # TODO determine range from data?
-    p = figure(
+    p = figure(  # type: ignore[call-arg]  # hmm seems like false positive https://github.com/bokeh/bokeh/issues/14412
         title='map',
         x_axis_type='mercator',
         y_axis_type='mercator',
@@ -73,9 +69,9 @@ def plot(day: str, df):
         x_range=x_range,
         y_range=y_range,
     )
-    p.add_tile(tile_provider)
+    p.add_tile(xyz.OpenStreetMap.Mapnik)  # TODO double check it?
 
-    p.circle(x='mlon', y='mlat', size=10, fill_color='blue', fill_alpha=0.8, source=CDS(df))
+    p.circle(x='mlon', y='mlat', radius=10, fill_color='blue', fill_alpha=0.8, source=CDS(df))
 
     # I guess mimicking the same interface as google maps is ok? e.g. sidebar with points and time on the left and highlight them (maybe with different colors depending on whether they are in the future or in the past)
 

@@ -38,7 +38,7 @@ def run(to: Path, tab_name: Optional[str]=None, debug: bool=False) -> Iterable[E
         try:
             if debug:
                 # todo optional dependency?
-                from ipdb import launch_ipdb_on_exception # type: ignore
+                from ipdb import launch_ipdb_on_exception # type: ignore[import-not-found]
                 ctx = launch_ipdb_on_exception
             else:
                 from contextlib import nullcontext

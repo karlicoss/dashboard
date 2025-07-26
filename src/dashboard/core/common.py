@@ -1,3 +1,3 @@
-from my.core.logging import LazyLogger
+from my.core.logging import make_logger
 
-logger = LazyLogger('dashboard')
+logger = make_logger('dashboard')

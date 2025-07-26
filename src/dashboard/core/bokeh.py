@@ -1,12 +1,14 @@
+from collections.abc import Mapping
 from datetime import date, timedelta, datetime
 import html
 from itertools import cycle, chain
 import logging
-from typing import Dict, Optional, Sequence, Union, Optional
+from typing import Dict, Optional, Sequence, Union, Optional, Any, Literal
 import warnings
 
 from bokeh.layouts import gridplot, column
 from bokeh.models import ColumnDataSource as CDS
+from bokeh.models.renderers import GlyphRenderer
 
 import numpy as np
 import pandas as pd
@@ -179,7 +181,9 @@ def test_scatter_matrix_demo() -> None:
 
 from bokeh.layouts import LayoutDOM
 from bokeh.models import Plot
-from bokeh.plotting import figure as Figure  # FIXME
+from bokeh.models.renderers import GlyphRenderer
+from bokeh.models.layouts import Column
+from bokeh.plotting import figure as figureT  # FIXME ugh, have a method named figure here
 from typing import Sequence, List
 from dataclasses import dataclass
 
@@ -188,10 +192,10 @@ from more_itertools import one
 # NamedTuple is friendly towards overriding __iter__
 @dataclass
 class RollingResult:
-    layout: LayoutDOM
+    layout: Column
     # todo switch to Sequence..
-    plots: List[Plot]
-    figures: List[Figure]
+    plots: List[GlyphRenderer]
+    figures: List[figureT]
 
     def __iter__(self):
         return iter(self.plots)
@@ -363,7 +367,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
                 tc = TableColumn(
                     field=c,
                     title=c,
-                    **({} if formatter is None else dict(formatter=formatter)),
+                    **({} if formatter is None else dict(formatter=formatter)),  # type: ignore[arg-type]
                     width=width * one_char,
                 )
                 yield tc
@@ -411,8 +415,9 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
         warnings.warn(f'No data points for {df}, empty plot!')
 
     if None not in avgs:
-        plots.append(plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs))  # type: ignore[arg-type]
-   
+        ps: GlyphRenderer = plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs)
+        plots.append(ps)
+
     # only stuff without errors/warnings participates in the avg computation
     if 'error' in df.columns: # meh
         df = df[df['error'].isna()]
@@ -434,9 +439,10 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
         # somehow plot.line works if 'x' is index? but df[x] doesnt..
 
         # todo different style by default? thicker line? not sure..
-        plots.append(plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs))
+        pl: GlyphRenderer = plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs)
+        plots.append(pl)
 
-    plot.title.text = f'x: {x}, y: {y}'  # type: ignore[attr-defined]
+    plot.title.text = f'x: {x}, y: {y}'
     # TODO axis labels instead?
     return ctx
     # return RollingResult(
@@ -447,7 +453,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
     # )
 
 from bokeh.models import CustomJSHover
-def figure(df=None, **kwargs) -> Figure:
+def figure(df=None, **kwargs) -> figureT:
     if df is None:
         # just have at least some defaults..
         dtypes = {
@@ -460,7 +466,7 @@ def figure(df=None, **kwargs) -> Figure:
     tooltips   = []
     formatters = {}
     for c, t in dtypes.items():
-        fmt = None
+        fmt: Literal['numeral', 'datetime', 'printf'] | CustomJSHover | None = None
         tfmt = '@' + c
         if df is None:
             dateish = 'datetime64' in str(t)
@@ -474,7 +480,7 @@ def figure(df=None, **kwargs) -> Figure:
             # todo %T only if it's actually datetime, not date? not sure though...
             tfmt += '{%F %a %T}'
         elif 'timedelta64' in str(t):  # also meh
-            fmt = CustomJSHover(code='const tick = value; ' + hhmm_formatter(unit=t))  # type: ignore[assignment]
+            fmt = CustomJSHover(code='const tick = value; ' + hhmm_formatter(unit=t))
             tfmt += '{custom}'
             # eh, I suppose ok for now. would be nice to reuse in the tables...
         elif c == 'error':
@@ -500,7 +506,7 @@ def figure(df=None, **kwargs) -> Figure:
     from bokeh.plotting import figure as F
     # TODO this kinda expands it to fullscreen
     # ugh would be nice to automatically expand to fullscreen?
-    kw = {'width': 2000}
+    kw: dict[str, Any] = {'width': 2000}
     kw.update(**kwargs)
     f = F(**kw)
     # ugh. would be nice if add_tools returned self..
@@ -509,7 +515,7 @@ def figure(df=None, **kwargs) -> Figure:
 
 
 # not sure if it's that useful.. for a single parameter.
-def date_figure(df=None, **kwargs) -> Figure:
+def date_figure(df=None, **kwargs) -> figureT:
     # ugh. without date_figure it's actually showing unix timestamps on the x axis
     # wonder if can make it less manual?
     kw = dict(x_axis_type='datetime')
@@ -655,11 +661,12 @@ def plot_multiple(df, *, columns, **kwargs):
                     fill_color=col,
                     fill_alpha=0.1,
                     legend_label=f'{f} ranges',
-                    **extras,
+                    **extras,  # type: ignore[arg-type]
                 )
 
 
-        p.title.text = str(grp)  # type: ignore[attr-defined]  # this works, but mypy complains..
+        assert p.title is None, p.title
+        p.title = str(grp)
         if x_range is None:
             x_range = p.x_range
 
