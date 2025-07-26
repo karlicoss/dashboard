@@ -1,29 +1,30 @@
-from collections.abc import Mapping
-from datetime import date, timedelta, datetime
 import html
-from itertools import cycle, chain
 import logging
-from typing import Dict, Optional, Sequence, Union, Optional, Any, Literal
 import warnings
-
-from bokeh.layouts import gridplot, column
-from bokeh.models import ColumnDataSource as CDS
-from bokeh.models.renderers import GlyphRenderer
+from collections.abc import Mapping, Sequence
+from datetime import datetime, timedelta
+from itertools import chain, cycle
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
+from bokeh.layouts import column, gridplot
+from bokeh.models import ColumnDataSource as CDS
+from bokeh.models.renderers import GlyphRenderer
 from pandas.api.types import is_numeric_dtype
 
 
 # TODO FIXME also handle errors?
 # global error list + plotly like number of errors per plot?
 def scatter_matrix(
-        df,
-        *,
-        xs: Optional[Sequence[str]]=None, ys: Optional[Sequence[str]]=None,
-        width=None, height=None,
-        regression=True,
-        **kwargs,
+    df,
+    *,
+    xs: Sequence[str] | None = None,
+    ys: Sequence[str] | None = None,
+    width=None,
+    height=None,
+    regression=True,
+    **kwargs,  # noqa: ARG001
 ):
     assert len(df) > 0, 'TODO handle this'
 
@@ -33,18 +34,18 @@ def scatter_matrix(
 
     xs = df.columns if xs is None else xs
     ys = df.columns if ys is None else ys
-    ys = list(reversed(ys)) # reorder to move meaningful stuff to the top left corner
+    ys = list(reversed(ys))  # reorder to move meaningful stuff to the top left corner
 
     isnum = lambda c: is_numeric_dtype(df.dtypes[c])
     # reorder so non-numeric is in the back
     # todo mode to drop non-numeric? not sure.. definitely can drop 'error' and datetimish?
-    xs = list(sorted(xs, key=isnum, reverse=True))
-    ys = list(sorted(ys, key=isnum, reverse=True))
+    xs = sorted(xs, key=isnum, reverse=True)
+    ys = sorted(ys, key=isnum, reverse=True)
 
     # TODO not sure I wanna reuse axis?
     def make(xc: str, yc: str):
         p = figure(df=df)
-        diag = xc == yc # todo handle properly
+        _diag = xc == yc  # todo handle properly
         # TODO not sure if I even want them... move to the very end?
         if isnum(xc) and isnum(yc):
             p.scatter(x=xc, y=yc, source=source, size=3)
@@ -54,7 +55,8 @@ def scatter_matrix(
             # FIXME how to make sure text fits into the plot??
             add_text(
                 p,
-                x=0.0, y=0.0,
+                x=0.0,
+                y=0.0,
                 text='Not numeric',
                 text_color='red',
             )
@@ -64,7 +66,8 @@ def scatter_matrix(
 
     grid = [[make(xc=x, yc=y) for x in xs] for y in ys]
     from bokeh.layouts import gridplot
-    w1 = None if width  is None else width  // min(len(xs), len(ys))
+
+    w1 = None if width is None else width // min(len(xs), len(ys))
     h1 = None if height is None else height // min(len(xs), len(ys))
     grid_res = gridplot(grid, width=w1, height=h1)
 
@@ -98,7 +101,6 @@ def scatter_matrix(
         dd = df[[xx, yy]].dropna()  # otherwise from_scatter fails
         # todo would be nice to display stats on the number of points dropped
 
-
         udd = dd.drop_duplicates()
         if len(udd) <= 1:
             # can't perform a reasonable regression then
@@ -110,7 +112,6 @@ def scatter_matrix(
                 text_color='red',
             )
             continue
-
 
         res = smf.ols(f"{yy} ~ {xx}", data=dd).fit()
         intercept = res.params['Intercept']
@@ -130,6 +131,7 @@ def scatter_matrix(
         # todo need to add various regression properties, like intercept, etc
         # TODO hopefuly this overlays correctly?? not sure about nans, again
         from bokeh.models import Slope  # type: ignore[attr-defined]  # works in runtime, seems like annotations issue?
+
         sl = Slope(gradient=slope, y_intercept=intercept, line_color='green', line_width=3)
         plot.add_layout(sl)
         add_text(
@@ -140,13 +142,16 @@ def scatter_matrix(
             text_color=g.glyph.line_color,
         )
 
-
     # TODO dynamic resizing would be nice
     return grid_res
+
+
 # todo plotly/sns also plotted some sort of confidence intervals? not sure if they are useful
+
 
 def add_text(plot, *, text: str, **kwargs):
     from bokeh.models import Text
+
     # ugh. for fuck's sake, Label doesn't support multiline... https://github.com/bokeh/bokeh/issues/7317
     # and glyphs always want a data source
     textsrc = CDS({'text': [text]})
@@ -158,6 +163,7 @@ def add_text(plot, *, text: str, **kwargs):
 def test_scatter_matrix_demo() -> None:
     import numpy as np
     import pandas as pd
+
     df = pd.DataFrame([
         (4     , 25    ),
         (6     , 40    ),
@@ -171,7 +177,7 @@ def test_scatter_matrix_demo() -> None:
         (3     , 9.5   ),
         (4     , np.nan),
         (4.5   , 20.0  ),
-    ], columns=['a', 'b'])
+    ], columns=['a', 'b'])  # fmt: skip
 
     # TODO annotate with what's expected?
 
@@ -179,27 +185,25 @@ def test_scatter_matrix_demo() -> None:
     return scatter_matrix(df, width=500, height=500)
 
 
-from bokeh.layouts import LayoutDOM
-from bokeh.models import Plot
-from bokeh.models.renderers import GlyphRenderer
-from bokeh.models.layouts import Column
-from bokeh.plotting import figure as figureT  # FIXME ugh, have a method named figure here
-from typing import Sequence, List
+from collections.abc import Sequence
 from dataclasses import dataclass
 
+from bokeh.models.layouts import Column
+from bokeh.models.renderers import GlyphRenderer
+from bokeh.plotting import figure as figureT  # FIXME ugh, have a method named figure here
 from more_itertools import one
+
 
 # NamedTuple is friendly towards overriding __iter__
 @dataclass
 class RollingResult:
     layout: Column
     # todo switch to Sequence..
-    plots: List[GlyphRenderer]
-    figures: List[figureT]
+    plots: list[GlyphRenderer]
+    figures: list[figureT]
 
     def __iter__(self):
         return iter(self.plots)
-
 
     @property
     def figure(self):
@@ -218,15 +222,18 @@ class RollingResult:
 
 # None is treated as 'omit' the scatter plot
 # todo not sure about that though... maybe better to control on the call sites?
-Avg = Optional[Union[str, int]]
+Avg = str | int | None
+
 
 # todo better name? also have similar function for plotly
-def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_label=None, context: Optional[RollingResult]=None, **kwargs) -> RollingResult:
+def rolling(
+    *, x: str, y: str, df, avgs: Sequence[Avg] = ['7D', '30D'], legend_label=None, context: RollingResult | None = None, **kwargs
+) -> RollingResult:
     # TODO maybe use a special logging handler, so everything logged with warning level gets displayed?
     errors = []
 
     # todo ugh. the same HPI check would be nice..
-    tzs = set(df.index.map(lambda x: getattr(x, 'tzinfo', None))) # meh
+    tzs = set(df.index.map(lambda x: getattr(x, 'tzinfo', None)))  # meh
     if len(tzs) > 1:
         errors.append(f'WARNING: a mixture of timezones: {tzs}. You might want to unlocalize() them first.')
     elif len(tzs) == 1:
@@ -263,10 +270,10 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
 
     has_x = df.index.notna()
     has_y = df[y].notna()
-    err   = df['error'].notna() if 'error' in df.columns else df.index == 'how_to_make_empty_index?'
+    err = df['error'].notna() if 'error' in df.columns else df.index == 'how_to_make_empty_index?'
     # ^^^ todo a bit ugly... think about this better
 
-    for_table = ~has_x # case 1 is handled
+    for_table = ~has_x  # case 1 is handled
 
     # case 2: set proper error for ones that don't have y
     df.loc[has_x & ~has_y & ~err, 'error'] = f'{y} is nan/null'
@@ -275,21 +282,23 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
     # case 3
     case_3 = has_x & ~has_y
     for_table |= case_3
-    for_marks  = case_3
+    for_marks = case_3
 
     # case 4, 5
     ok = has_x & has_y
     case_4 = ok & err
     for_table |= case_4
-    for_warn   = case_4
+    for_warn = case_4
 
+    # fmt: off
     dfm = df.loc[for_marks]
     dfe = df.loc[for_table]
     dfw = df.loc[for_warn]
     df  = df.loc[ok]
+    # fmt: on
     if len(dfm) > 0:
         # todo meh.. how to make the position absolute??
-        some_y = df[y].quantile(0.8) # to display kinda on top, but not too high
+        some_y = df[y].quantile(0.8)  # to display kinda on top, but not too high
         if np.isnan(some_y):
             # otherwise fails during JSON serialization
             some_y = 0.0
@@ -299,7 +308,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
             y=some_y,
             legend_label='errors',
             line_color='red',
-            fill_color='yellow', # ??
+            fill_color='yellow',  # ??
             marker='circle_cross',
             size=10,
         )
@@ -308,13 +317,16 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
         errors.append(f'Also encountered {len(dfe)} errors:')
 
     from bokeh.models.widgets.markups import Div
+
     # first a summary for the most important warnings/errors
     # todo append later stuff as well, there are some warnings during means
     for e in errors:
-        layouts.append(Div(
-            text=html.escape(e),
-            styles={'color': 'red', 'font-weight': 'strong'},
-        ))
+        layouts.append(
+            Div(
+                text=html.escape(e),
+                styles={'color': 'red', 'font-weight': 'strong'},
+            )
+        )
 
     if len(dfe) > 0:
         # todo could even keep the 'value' erorrs and display below too.. but for now it's ok
@@ -324,27 +336,28 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
         # todo maybe should display all points, highlight error ones as red (and it sorts anyway so easy to overview?)
         # todo would be nice to highlight the corresponding points in table/plot
         from bokeh.models.widgets import DataTable, DateFormatter, TableColumn
-        from bokeh.models.widgets.tables import DateFormatter, NumberFormatter, HTMLTemplateFormatter
+        from bokeh.models.widgets.tables import DateFormatter
         # didn't work at all??
         # from bokeh.models.widgets.tables import ScientificFormatter
 
         # todo DataCube?? even more elaborate
-        dfe = dfe.reset_index() # todo ugh. otherwise doesn't display the index at all?
+        dfe = dfe.reset_index()  # todo ugh. otherwise doesn't display the index at all?
         dfe = dfe.sort_values(by=x)
 
         # todo maybe display 'error' as the first col?
-        datefmt = DateFormatter(format="%Y-%m-%d")
+        _datefmt = DateFormatter(format="%Y-%m-%d")  # FIXME use it??
         # todo speed_avg could have less digits (guess by the dispersion or something??)
 
         # TODO horrible, but js bits of bokeh compute some complete bullhit for column widths
         # todo set monospace font??
-        one_char = 10 # pixels
+        one_char = 10  # pixels
+
         def datatable_columns(df):
             for c, t in df.dtypes.items():
                 formatter = None
 
                 # TODO also use col name.. then won't have to handle nans!
-                width = 15 # in characters
+                width = 15  # in characters
                 # for fixed width types, we can have something kind of reasonable
                 if str(t).startswith('float'):
                     l = df[c].dropna().astype(str).str.len().max()
@@ -367,7 +380,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
                 tc = TableColumn(
                     field=c,
                     title=c,
-                    **({} if formatter is None else dict(formatter=formatter)),  # type: ignore[arg-type]
+                    **({} if formatter is None else {'formatter': formatter}),  # type: ignore[arg-type]
                     width=width * one_char,
                 )
                 yield tc
@@ -378,15 +391,11 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
             columns=list(datatable_columns(dfe)),
             # todo ugh. handle this properly, was too narrow on the sleep plots
             editable=True,
-
             width=2000,
-
             # default ends up in trimmed table content
             autosize_mode='none',
-
             # this might overstretch the parent...
             # autosize_mode='fit_viewport',
-
             # this just makes it respect the parent width
             # width_policy='fit',
         )
@@ -399,16 +408,20 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
 
     if len(dfw) > 0:
         plot.circle(source=CDS(dfw), x=x, y=y, legend_label='warnings', size=20, color='yellow')
-   
+
     # todo warn if unsorted?
     df = df.sort_index()
 
     if len(df) == 0:
         # add a fake point, so at least plotting doesn't fail...
-        df = pd.DataFrame([{
-            x: datetime(year=2000, month=1, day=1),
-            y: 0.0,
-        }]).set_index(x)
+        df = pd.DataFrame(
+            [
+                {
+                    x: datetime(year=2000, month=1, day=1),
+                    y: 0.0,
+                }
+            ]
+        ).set_index(x)
         avgs = ['3D' for _ in avgs]
         # FIXME need to add this to errors as well, or at least title..
         # TODO need to add a better placholder, timestamp 0 really messes things up
@@ -419,7 +432,7 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
         plots.append(ps)
 
     # only stuff without errors/warnings participates in the avg computation
-    if 'error' in df.columns: # meh
+    if 'error' in df.columns:  # meh
         df = df[df['error'].isna()]
     for period in [a for a in avgs if a is not None]:
         dfy = df[[y]]
@@ -452,18 +465,21 @@ def rolling(*, x: str, y: str, df, avgs: Sequence[Avg]=['7D', '30D'], legend_lab
     #     figures=[plot],
     # )
 
+
 from bokeh.models import CustomJSHover
+
+
 def figure(df=None, **kwargs) -> figureT:
     if df is None:
         # just have at least some defaults..
         dtypes = {
-            'date' : 'datetime64',
+            'date': 'datetime64',
             'error': str,
         }
     else:
         dtypes = df.reset_index().dtypes.to_dict()
 
-    tooltips   = []
+    tooltips = []
     formatters = {}
     for c, t in dtypes.items():
         fmt: Literal['numeral', 'datetime', 'printf'] | CustomJSHover | None = None
@@ -473,7 +489,7 @@ def figure(df=None, **kwargs) -> figureT:
         else:
             # this is more reliable, works if there is a mix of timestamps..
             s = df.reset_index()[c].dropna()
-            dateish = len(s) > 0 and s.apply(lambda x: isinstance(x, (pd.Timestamp, datetime))).all()
+            dateish = len(s) > 0 and s.apply(lambda x: isinstance(x, (pd.Timestamp, datetime))).all()  # noqa: UP038
         # TODO add to tests?
         if dateish:
             fmt = 'datetime'
@@ -496,14 +512,16 @@ def figure(df=None, **kwargs) -> figureT:
     # TODO: use html tooltip with templating
     # and https://docs.bokeh.org/en/latest/docs/reference/models/formatters.html#bokeh.models.formatters.DatetimeTickFormatter
     from bokeh.models import HoverTool
+
     hover = HoverTool(
         tooltips=tooltips,
         formatters=formatters,
         # display a tooltip whenever the cursor is vertically in line with a glyph
         # TODO not sure I like this, it's a bit spammy
-        mode='vline'
+        mode='vline',
     )
     from bokeh.plotting import figure as F
+
     # TODO this kinda expands it to fullscreen
     # ugh would be nice to automatically expand to fullscreen?
     kw: dict[str, Any] = {'width': 2000}
@@ -518,7 +536,7 @@ def figure(df=None, **kwargs) -> figureT:
 def date_figure(df=None, **kwargs) -> figureT:
     # ugh. without date_figure it's actually showing unix timestamps on the x axis
     # wonder if can make it less manual?
-    kw = dict(x_axis_type='datetime')
+    kw = {'x_axis_type': 'datetime'}
     kw.update(**kwargs)
     return figure(df=df, **kw)
 
@@ -530,6 +548,7 @@ def date_figure(df=None, **kwargs) -> figureT:
 # show(gridplot([[p1], [p2]]))
 # the latter works better because it aligns stuff properly
 #  otherwise impossible to notice js errors
+
 
 def J(code):
     return f'''
@@ -562,6 +581,7 @@ def date_slider(p, *, dates=None, date_column='dt'):
     edate += timedelta(days=5)
 
     from bokeh.models.widgets import DateRangeSlider
+
     ds = DateRangeSlider(
         title="Date Range: ",
         start=sdate,
@@ -574,7 +594,7 @@ def date_slider(p, *, dates=None, date_column='dt'):
     # TODO hmm. so, js won't be able to call into python in Jupyter...
     # see https://docs.bokeh.org/en/latest/docs/gallery/slider.html
     update_js = CustomJS(
-        args=dict(ds=ds, xrange=p.x_range),
+        args={'ds': ds, 'xrange': p.x_range},
         code=J('''
     const [ll, rr] = ds.value;
     // didn't work??
@@ -584,25 +604,26 @@ def date_slider(p, *, dates=None, date_column='dt'):
 
     // todo hmm, turned out it wasn't necessary??
     // source.trigger('change');
-    '''
-    ))
+    '''),
+    )
 
     # todo add some quick selectors, e.g. last month, last year, etc like plotly
     ds.js_on_change('value', update_js)
     return ds
 
 
-def plot_multiple(df, *, columns, **kwargs):
+def plot_multiple(df, *, columns, **kwargs):  # noqa: ARG001
     # todo autodiscover columns somehow?
     # basically all except dates?
 
     # todo use multiindex for groups? not sure if possible
     # https://stackoverflow.com/questions/30791839/is-there-an-easy-way-to-group-columns-in-a-pandas-dataframe
-    
+
     # todo make configurable
     from bokeh.palettes import Dark2_5 as palette
 
     from .pandas import read_group_hints, read_range_hints
+
     groups = read_group_hints(df)
 
     range_hints = read_range_hints(df)
@@ -617,7 +638,7 @@ def plot_multiple(df, *, columns, **kwargs):
     for grp in groups:
         # todo add source to annotation?
         # todo rely on kwargs for date x axis?
-        p = date_figure(**({} if x_range is None else dict(x_range=x_range)), **kwargs)
+        p = date_figure(**({} if x_range is None else {'x_range': x_range}), **kwargs)
 
         # todo color rainbow??
         for f, color in zip(grp, cycle(palette)):
@@ -625,11 +646,13 @@ def plot_multiple(df, *, columns, **kwargs):
             fdf = df[df[f].notna()]
 
             # TODO rely on dt index? it can be non-unique so it should be fine...
+            # fmt: off
             p.scatter(x='dt', y=f, source=CDS(data=fdf), color=color, legend_label=f)
             p.line   (x='dt', y=f, source=CDS(data=fdf), color=color, legend_label=f)
+            # fmt: on
 
             # TODO axis labels
-            
+
             # hmm it actually uses glucose level as an example
             # https://docs.bokeh.org/en/latest/docs/user_guide/annotations.html#box-annotations
 
@@ -642,28 +665,27 @@ def plot_multiple(df, *, columns, **kwargs):
                 # normal = BoxAnnotation(bottom=rh.low, top=rh.high, fill_alpha=0.1, fill_color=rh.color)
                 # p.add_layout(normal)
 
-
-                extras: Mapping[str, Optional[str]] = dict(color=None)
+                extras: Mapping[str, str | None] = {'color': None}
                 col = rh.color
                 if col is None:
                     col = color
                     if len(rhs) > 1:
                         logging.warning("Multiple ranges for %s don't have colour, this will result in ranges overlapping: %s", f, rhs)
                         # at least make the separators visible
-                        extras = dict(color='black', line_dash='dotted')
+                        extras = {'color': 'black', 'line_dash': 'dotted'}
 
                 # todo hide by default?
                 # hmm, without left=, it plots at timestamp 0 =/
                 p.hbar(
-                    left =min(fdf['dt']),
+                    left=min(fdf['dt']),
                     right=max(fdf['dt']),
-                    y=(rh.low + rh.high) / 2, height=rh.high - rh.low, # eh, this is awkward..
+                    y=(rh.low + rh.high) / 2,
+                    height=rh.high - rh.low,  # eh, this is awkward..
                     fill_color=col,
                     fill_alpha=0.1,
                     legend_label=f'{f} ranges',
                     **extras,  # type: ignore[arg-type]
                 )
-
 
         assert p.title is None, p.title
         p.title = str(grp)
@@ -674,28 +696,33 @@ def plot_multiple(df, *, columns, **kwargs):
 
     return gridplot([[x] for x in plots])
 
+
 # TODO use axis name to name the plot (at least by default?)
 
 
-def set_hhmm_axis(axis, *, mint: int, maxt: int, period: int=30) -> None:
+def set_hhmm_axis(axis, *, mint: int, maxt: int, period: int = 30) -> None:
     from bokeh.models import FixedTicker
+
     # FIXME infer mint/maxt
     ticks = list(range(mint, maxt, period))
     axis.ticker = FixedTicker(ticks=ticks)
     from bokeh.models import CustomJSTickFormatter
+
     axis.formatter = CustomJSTickFormatter(code=hhmm_formatter(unit=int))
 
 
 # TODO use J for defensive js?
 def hhmm_formatter(unit):
-    if unit == int:
+    if unit is int:
         xx = 'var mins = tick'
     elif str(unit) == 'timedelta64[ns]':
-        xx = 'var mins = Math.floor(tick / 10 ** 3 / 60)' # eh why 10^3 works if it's nanos??
+        xx = 'var mins = Math.floor(tick / 10 ** 3 / 60)'  # eh why 10^3 works if it's nanos??
     else:
         raise RuntimeError(f'Unhandled: {unit}')
 
-    return xx + """
+    return (
+        xx
+        + """
         var sign = ''
         if (mins < 0) {
             sign = '-'
@@ -715,6 +742,7 @@ def hhmm_formatter(unit):
         parts.push(mm)
         return sign + days + parts.join(':')
     """
+    )
 
 
 def guess_range(plot, *, axis: str):
@@ -731,7 +759,7 @@ def guess_range(plot, *, axis: str):
                 # TODO assumes bar plot.. careful
                 minname, maxname = glyph.bottom, glyph.top
             else:
-                minname, maxname = glyph.left  , glyph.right
+                minname, maxname = glyph.left, glyph.right
         else:
             minname, maxname = name, name
         # note: name was qual to 447.0 at some point (sleep plot). no idea what it means..
@@ -747,7 +775,7 @@ def guess_range(plot, *, axis: str):
     mn = np.nanmin(mins)
     mx = np.nanmax(maxs)
     if np.isnan(mn):
-        mn = 100.0 # TODO might not be numeric..
+        mn = 100.0  # TODO might not be numeric..
     if np.isnan(mx):
         mx = 0.0
     # todo not sure what's a good value to fallback?

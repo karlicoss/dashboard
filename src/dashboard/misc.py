@@ -1,8 +1,8 @@
 from datetime import timedelta
 
-from bokeh.models import ColumnDataSource as CDS
 import numpy as np
 import pandas as pd
+from bokeh.models import ColumnDataSource as CDS
 
 from .core.bokeh import guess_range
 
@@ -14,7 +14,7 @@ def add_daysoff(plot, *, dates=None, bottom=None, top=None):
         b, t = guess_range(plot, axis='y')
         # todo how to extend the range a bit so there is some leeway?
         bottom = bottom or b
-        top    = top    or t
+        top = top or t
 
     if dates is None:
         mind, maxd = guess_range(plot, axis='x')
@@ -24,7 +24,8 @@ def add_daysoff(plot, *, dates=None, bottom=None, top=None):
     day = timedelta(1)
 
     # todo need to keep boundary (-0.5, 0.5)? .. or it's automatic??
-    days = list(np.arange(mind, maxd, day))
+    # # FIXME why is it unused?
+    _days = list(np.arange(mind, maxd, day))
     # TODO make a dataframe with it??
 
     days_2 = pd.date_range(start=mind, end=maxd, freq='D')
@@ -35,10 +36,12 @@ def add_daysoff(plot, *, dates=None, bottom=None, top=None):
         import my.calendar.holidays as holidays
     except Exception as e:
         import logging
+
         logging.exception(e)
-        return
+        return None
 
     col_df = pd.DataFrame(index=days_2, columns=['color'])
+
     def calc_color(row):
         # todo separate column, abstract away
         dt = row.name
@@ -66,5 +69,3 @@ def add_daysoff(plot, *, dates=None, bottom=None, top=None):
         alpha=0.05,
         legend_label='Days off',
     )
-
-

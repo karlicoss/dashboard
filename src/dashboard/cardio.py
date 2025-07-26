@@ -3,7 +3,7 @@ from datetime import timedelta
 from bokeh.layouts import column
 
 from .core import tab
-from .core.bokeh import rolling, date_figure, RollingResult
+from .core.bokeh import RollingResult, rolling
 from .core.pandas import resample_sum
 
 
@@ -25,19 +25,25 @@ def _plot_running(df):
 
     # TODO for rolling; if plot is missing, generate automatically for easier interactive experience?
     # TODO FIXME rolling doesn't work without setting the index
+    # fmt: off
     r1 = rolling(df=rdf, x='start_time', y='speed_avg'     , avgs=['14D'])
     r1.figure.title.text = 'Running speed'
     r2 = rolling(df=rdf, x='start_time', y='heart_rate_avg', avgs=['14D'])
     r2.figure.title.text = 'Running HR'
-    r3 = rolling(df=rdf, x='start_time', y='speed_to_hr'   , avgs=['14D']) # todo change to 30D?
+    r3 = rolling(df=rdf, x='start_time', y='speed_to_hr', avgs=['14D'])  # todo change to 30D?
     r3.figure.title.text = 'Running speed/HR (the more the better)'
+    # fmt: on
 
     # todo assume column layout if it's a sequence?
-    return column([
-        r1.layout,
-        r2.layout,
-        r3.layout,
-    ])
+    return column(
+        [
+            r1.layout,
+            r2.layout,
+            r3.layout,
+        ]
+    )
+
+
 # TODO would be cool to display all HR plots on the same page? not sure how to align them properly though
 
 
@@ -52,12 +58,15 @@ def _plot_spinning(df):
     r.figure.title.text = 'Spinning HR'
 
     return r.layout
+
+
 # TODO merge in manual descriptions, attach interval information
 
 
 @tab
 def plot_spinning():
     from .data import all_exercise_dataframe as DF
+
     return _plot_spinning(DF())
 
 
@@ -71,18 +80,23 @@ def _plot_cross_trainer(df):
     df['power_to_hr'] = df['power_avg'] / df['heart_rate_avg']
 
     # TODO 14D?
+    # fmt: off
     r1 = rolling(df=df, x='start_time', y='heart_rate_avg', avgs=['7D'])
     r1.figure.title.text = 'Cross trainer HR'
     r2 = rolling(df=df, x='start_time', y='power_avg'     , avgs=['7D'])
     r2.figure.title.text = 'Cross trainer power'
     r3 = rolling(df=df, x='start_time', y='power_to_hr'   , avgs=['7D'])
     r3.figure.title.text = 'Cross trainder power to HR (the more the better)'
+    # fmt: on
 
-    return column([
-        r1.layout,
-        r2.layout,
-        r3.layout,
-    ])
+    return column(
+        [
+            r1.layout,
+            r2.layout,
+            r3.layout,
+        ]
+    )
+
 
 # TODO fill distance for treadmill from manual pictures?
 
@@ -91,9 +105,11 @@ def _plot_cross_trainer(df):
 # and if it was preserved across the sessions..
 # TODO rolling: check that columns types are numeric? otherwise get weird errors
 
+
 @tab
 def plot_cross_trainer():
     from .data import cross_trainer_dataframe as DF
+
     return _plot_cross_trainer(DF())
 
 
@@ -117,33 +133,40 @@ def _plot_cardio_volume(df) -> RollingResult:
 
     r = rolling(df=df, x='start_time', y='volume', avgs=['7D', '30D'])
     [g, g7, g30] = r
-    g7 .glyph.line_dash = 'dashed'
-    g7 .visible = False
+    g7.glyph.line_dash = 'dashed'
+    g7.visible = False
     g30.glyph.line_width = 2
 
     f = r.figure
     f.title.text = 'Cardio exercise volume'
     return r
+
+
 # note: old dashboard -- ok, plotting just endomondo stuff with old dashboard using kcal as volume proxy, matches very closely
 # TODO would be interesting to add BMR as a third plot? or just add to total somhow..
+
 
 @tab
 def plot_cardio_volume():
     from .data import cardio_dataframe as DF
+
     return _plot_cardio_volume(DF()).layout
 
 
 @tab
 def plot_running():
     from .data import all_exercise_dataframe as DF
+
     return _plot_running(DF())
 
 
 def plot_running_fake():
     from .data import fake_endomondo
+
     with fake_endomondo(count=100):
         return plot_running()
 
 
 from .core.tests import make_test
+
 test_running = make_test(plot_running_fake)

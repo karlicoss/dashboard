@@ -1,5 +1,5 @@
-from .core.pandas import set_group_hints, set_range_hints, Range
 from .core.bokeh import plot_multiple
+from .core.pandas import Range, set_group_hints, set_range_hints
 
 
 # todo wonder if it's possible to add multiple ranges? e.g. I could have LDL/HDL/trigs on the same plot
@@ -17,12 +17,11 @@ def plot_blood(df):
     cols = set(df.columns)
     cols = cols.difference({'dt', 'extra', 'source'})
 
-
     # todo add cholesterol (and ratios) as well?
 
     # would be nice to make it more dynamic... also
     df['trig_over_hdl'] = df['triglycerides'] / df['hdl']
-   
+
     # TODO document this. it's a pretty nice way to decouple data and plotting
     # if anything is renamed, you still get a plot
     df = set_group_hints(
@@ -32,7 +31,7 @@ def plot_blood(df):
             ['glucose', 'ketones'],
             ['ldl', 'hdl', 'triglycerides', 'trig_over_hdl'],
             # todo allow ignoring? maybe with a special marker?
-        ]
+        ],
     )
 
     # todo perhaps I just shouldn't plot ranges on the 'combined' plots? only plot them on separate per-column ones
@@ -60,9 +59,8 @@ def plot_blood(df):
                 Range(low=0, high=1), # 'optimal'
                 Range(low=1, high=2), # 'normal'
             ],
-        }
-    )
-
+        },
+    )  # fmt: skip
 
     # todo meh. wonder how to make it properly adjustable?
     # just move to config?

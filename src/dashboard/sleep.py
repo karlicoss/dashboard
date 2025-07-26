@@ -1,13 +1,12 @@
-from datetime import timedelta, time
+from datetime import timedelta
 
-from .misc import add_daysoff
-from .core.bokeh import rolling, date_figure
-from .core import tab
-
-
+import pandas as pd
 from bokeh.models import ColumnDataSource as CDS
 from bokeh.models import LinearAxis, Range1d
-import pandas as pd
+
+from .core import tab
+from .core.bokeh import date_figure, rolling
+from .misc import add_daysoff
 
 
 def _sleep_df(df):
@@ -32,7 +31,7 @@ def _plot_sleep(df):
     # todo naming: plot vs figure vs graph?
     r = rolling(x='date', y='avg_hr', df=df, color='blue', legend_label='HR')
     [g, g7, g30] = r
-    g7 .glyph.line_width = 2
+    g7.glyph.line_width = 2
     g30.glyph.line_color = 'lightblue'
     g30.glyph.line_width = 2
     p = r.figure
@@ -42,7 +41,8 @@ def _plot_sleep(df):
     p.add_layout(LinearAxis(y_range_name='resp'), 'right')
     rolling(
         df=df,
-        x='date', y='respiratory_rate_avg',
+        x='date',
+        y='respiratory_rate_avg',
         color='orange',
         legend_label='Respiration',
         avgs=['7D'],
@@ -53,6 +53,7 @@ def _plot_sleep(df):
     add_daysoff(p)
     return r
 
+
 # todo always set output_file("xx.html")? so the latest html is always dumped?
 
 
@@ -62,11 +63,13 @@ def plot_sleep_hrv(df):
     df = _sleep_df(df)
 
     # TODO some hrv evening points are right at zero? careful, maybe worth filtering..
-    rm = rolling(df=df, x='date', y='hrv_morning', color='green' )
+    rm = rolling(df=df, x='date', y='hrv_morning', color='green')
     [g, g7, g30] = rm
-    g7 .glyph.line_dash = 'dashed'
+    g7.glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
-    re = rolling(df=df, x='date', y='hrv_evening', color='purple', context=rm)
+
+    # FIXME why is it unused??
+    _re = rolling(df=df, x='date', y='hrv_evening', color='purple', context=rm)
     g7.glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
 
@@ -87,8 +90,9 @@ def _mins(tt):
 
 def plot_sleep_intervals(df):
     df = _sleep_df(df)
+
     def prettify(start, end):
-        assert (end - start).days == 0, (start, end) # just in case
+        assert (end - start).days == 0, (start, end)  # just in case
         mins = lambda d: d.time().hour * 60 + d.time().minute
 
         if start.date() == end.date():
@@ -97,31 +101,33 @@ def plot_sleep_intervals(df):
             # meh. day boundary
             day = end.replace(hour=0, minute=0, second=0, microsecond=0)
             if day - start > end - day:
-                return mins(start), mins(end) + 24 * 60 # meh
+                return mins(start), mins(end) + 24 * 60  # meh
             else:
                 return mins(start) - 24 * 60, mins(end)
+
     def aux(row):
-        start = row['sleep_start']
-        end   = row['sleep_end']
-        if pd.isnull(start) or pd.isnull(end):
+        start = row['sleep_start']  # fmt: skip
+        end   = row['sleep_end'  ]  # fmt: skip
+        if pd.isna(start) or pd.isna(end):
             return None
         (start, end) = prettify(start, end)
-        return pd.Series([start, end]) # meh
+        return pd.Series([start, end])  # meh
 
-    ints = df[['sleep_start', 'sleep_end']] .apply(aux, axis='columns')
+    ints = df[['sleep_start', 'sleep_end']].apply(aux, axis='columns')
     ints = ints.rename({0: 'sleep_start', 1: 'sleep_end'}, axis='columns')
 
     # todo maybe instead plot angled lines? then won't need messing with minutes at all? Although still useful to keep
     p = date_figure()
     # ugh. very messy
-    mint = -24 * 60 - 10 * 60
-    maxt =  24 * 60 + 10 * 60
+    mint = -24 * 60 - 10 * 60  # fmt: skip
+    maxt =  24 * 60 + 10 * 60  # fmt: skip
     # TODO need to handle nans/errors?
 
     # TODO not convinced 'date' quite works here...
     p.vbar(source=CDS(ints), x='date', width=timedelta(1), bottom='sleep_start', top='sleep_end', color='black', alpha=0.1)
 
     from .core.bokeh import set_hhmm_axis
+
     # TODO also guess mint/maxt?
     set_hhmm_axis(p.yaxis, mint=mint, maxt=maxt)
 
@@ -132,9 +138,9 @@ def plot_sleep_intervals(df):
 def plot_sleep_bedtime(df):
     df = _sleep_df(df)
 
-    r = rolling(df=df, x='date', y='bed_time', color='green' )
-    [g, g7, g30] =r
-    g7 .glyph.line_dash = 'dashed'
+    r = rolling(df=df, x='date', y='bed_time', color='green')
+    [g, g7, g30] = r
+    g7.glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
     add_daysoff(r.figure)
     # TODO crap. at the moment, the return type isn't compatible with show()
@@ -160,11 +166,9 @@ def _plot_all_sleep(df):
     p3 = r3.figure
     p3.x_range = p1.x_range
 
-
     p4 = plot_sleep_intervals(df=df)
     # todo toggle between 'absolute/relative' length
     p4.x_range = p1.x_range
-
 
     # todo embedding bokeh server is probably not too bad
     # @gsteele13 show with notebook handles is for one-way Python->JS updates only. If you want to have bi-directional updates back to Python, you would need to embed a Bokeh server app in the notebook.
@@ -174,14 +178,18 @@ def _plot_all_sleep(df):
 
     # todo set default slider range to start of year?
     from bokeh.layouts import column
-    return column([
-        DS(p1, date_column='date'),
-        # todo display date slider for every layout?
-        r1.layout,
-        r2.layout,
-        r3.layout,
-        p4,
-    ], sizing_mode='stretch_width')
+
+    return column(
+        [
+            DS(p1, date_column='date'),
+            # todo display date slider for every layout?
+            r1.layout,
+            r2.layout,
+            r3.layout,
+            p4,
+        ],
+        sizing_mode='stretch_width',
+    )
     # todo scatter: maybe only display few latest points? not sure how easy it is to achieve?
 
     # TODO more frequent date ticks?
@@ -206,6 +214,7 @@ def _plot_sleep_correlations(df):
     # todo reuse/determine width
     # hmm, didn't manage to quickly google how to do this
     from .core.bokeh import scatter_matrix
+
     sm = scatter_matrix(df, width=3000, height=3000)
     return sm
     # TODO autodetect and have a global render() function that can handle anything?
@@ -219,29 +228,34 @@ def _plot_sleep_correlations(df):
 @tab
 def plot_sleep_all():
     from .data import sleep_dataframe as DF
+
     return _plot_all_sleep(DF())
 
 
 @tab
 def plot_sleep_correlations():
     from .data import sleep_dataframe as DF
+
     return _plot_sleep_correlations(DF())
 
 
 def plot_sleep_all_fake():
     from .data import fake_sleep
+
     with fake_sleep():
         return plot_sleep_all()
 
 
 def plot_sleep_correlations_fake():
     from .data import fake_sleep
+
     with fake_sleep():
         return plot_sleep_correlations()
 
 
 from .core.tests import make_test
-test_sleep_all          = make_test(plot_sleep_all_fake)
+
+test_sleep_all = make_test(plot_sleep_all_fake)
 test_sleep_correlations = make_test(plot_sleep_correlations_fake)
 
 # TODO ideally I want to visualize the DF automatically? and maybe tweak specific details

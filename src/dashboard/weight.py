@@ -1,8 +1,6 @@
-import pandas as pd
-
-from .core.bokeh import rolling, date_figure
-from .core.bokeh import date_slider as DS
 from .core import tab
+from .core.bokeh import date_slider as DS
+from .core.bokeh import rolling
 
 # TODO dataframe stubs would be useful
 
@@ -13,19 +11,21 @@ from .core import tab
 # good dynamic/safety balance. we benefit from the same Exception type without introducing extra restrictions
 # on the other hand, if the attribute is unhandled, there is always a visual hint in the exception string
 
+
 @tab
 def plot_weight(df=None):
     # todo need dataframe type
     if df is None:
         from .data import weight_dataframe as DF
+
         df = DF()
 
     # todo decide on 'plot' vs 'figure'
     # TODO autodetecting would be nice, similar to old plotly dashboard
     res = rolling(x='dt', y='weight', df=df, color='blue', legend_label='Weight')
     [g, g7, g30] = res.plots
-    g7 .glyph.line_width = 2
-    g7 .visible = False
+    g7.glyph.line_width = 2
+    g7.visible = False
     g30.glyph.line_color = 'lightblue'
     g30.glyph.line_width = 2
 
@@ -41,13 +41,15 @@ def plot_weight(df=None):
 def fake_weight_data():
     # TODO hmm, wonder what's the difference between hypothesis and faker wrt. data generation?
     from faker import Faker
+
     fake = Faker()
     fake.seed_instance(123)
 
     from datetime import datetime, timedelta
+
     # ok, later think of something proper
-    start = datetime.strptime('20150101', '%Y%m%d')
-    end   = datetime.strptime('20200101', '%Y%m%d')
+    start = datetime.strptime('20150101', '%Y%m%d')  # fmt: skip
+    end   = datetime.strptime('20200101', '%Y%m%d')  # fmt: skip
 
     count = 200
 
@@ -66,14 +68,19 @@ def fake_weight_data():
         fake.pyint(min_value=-1, max_value=1)
 
         for dt in dates
-    ]
-
+    ]  # fmt: skip
 
     import pandas as pd
-    df = pd.DataFrame([{
-        'dt'    : dt,
-        'weight': weight,
-    } for dt, weight in zip(dates, weights)])
+
+    df = pd.DataFrame(
+        [
+            {
+                'dt': dt,
+                'weight': weight,
+            }
+            for dt, weight in zip(dates, weights, strict=True)
+        ]
+    )
 
     df = df.set_index('dt')
     return df
@@ -84,4 +91,5 @@ def plot_weight_fake():
 
 
 from .core.tests import make_test
+
 test_plot_weight = make_test(plot_weight_fake)

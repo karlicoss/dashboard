@@ -1,10 +1,8 @@
-import datetime
-
 from bokeh.layouts import column
-from bokeh.models import ColumnDataSource as CDS
 
-from .core.bokeh import rolling, date_slider as DS
 from .core import tab
+from .core.bokeh import date_slider as DS
+from .core.bokeh import rolling
 
 
 def _plot_environment(df):
@@ -13,10 +11,11 @@ def _plot_environment(df):
     # todo should be fixed/asserted in hpi?
     df = df.sort_index()
     import pandas as pd
+
     # FIXME wtf??? otherwise it fails with 'window is not an integer' or something
     # maybe it's related to the problem with broken [:] indexing while attaching temperature to my.body.sleep.common
     df.index = pd.to_datetime(df.index, utc=True)
-    rt = rolling(x='dt', y='temp'    , df=df, color='red' , legend_label='Temperature', avgs=['10min', '1D'])
+    rt = rolling(x='dt', y='temp', df=df, color='red', legend_label='Temperature', avgs=['10min', '1D'])
 
     [g, g1h, g1d] = rt.plots
     g.glyph.marker = 'dot'
@@ -24,37 +23,43 @@ def _plot_environment(df):
     g1d.glyph.line_color = 'darkred'
     g1d.glyph.line_width = 1
 
-    rp = rolling(x='dt', y='pressure', df=df, color='grey', legend_label='Pressure'  , avgs=['10min', '1D'])
+    rp = rolling(x='dt', y='pressure', df=df, color='grey', legend_label='Pressure', avgs=['10min', '1D'])
     [g, g1h, g1d] = rp.plots
     g.glyph.marker = 'dot'
     g1h.glyph.line_width = 1
     g1d.glyph.line_color = 'black'
     g1d.glyph.line_width = 1
 
-    rh = rolling(x='dt', y='humidity', df=df, color='blue', legend_label='Humidity'  , avgs=['10min', '1D'])
+    rh = rolling(x='dt', y='humidity', df=df, color='blue', legend_label='Humidity', avgs=['10min', '1D'])
     [g, g1h, g1d] = rh.plots
     g.glyph.marker = 'dot'
     g1h.glyph.line_width = 1
     g1d.glyph.line_color = 'darkblue'
     g1d.glyph.line_width = 1
 
-    return column([
-        # todo display date slider for every layout?
-        DS(rt.figure, date_column='dt'),
-        rt.layout,
-        rp.layout,
-        rh.layout,
-    ], sizing_mode='stretch_width')
+    return column(
+        [
+            # todo display date slider for every layout?
+            DS(rt.figure, date_column='dt'),
+            rt.layout,
+            rp.layout,
+            rh.layout,
+        ],
+        sizing_mode='stretch_width',
+    )
 
 
 # TODO highlight different days?
 # TODO holidays/non-home timezones would def be nice
 
+
 @tab
 def plot_environment():
     from .data import bluemaestro_dataframe as DF
+
     df = DF()
     return _plot_environment(df)
+
 
 # TODO plot frequency of data?? could be even automatic (similar to hpi doctor/stat)
 # TODO use repo with fake data?

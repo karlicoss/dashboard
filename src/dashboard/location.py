@@ -1,11 +1,10 @@
-from datetime import datetime, date, timedelta
-from itertools import islice
-from typing import Tuple
-
 import math
+from datetime import datetime, timedelta
+
+
 # https://wiki.openstreetmap.org/wiki/Mercator#Python_implementation
 # ugh https://gis.stackexchange.com/a/156046 this one works fine??
-def merc(lat: float, lon: float) -> Tuple[float, float]:
+def merc(lat: float, lon: float) -> tuple[float, float]:
     eps = 0.000001
     if abs(lon) < eps:
         # TODO meh. at least take sign into the account...
@@ -13,24 +12,25 @@ def merc(lat: float, lon: float) -> Tuple[float, float]:
 
     r_major = 6378137.000
     x = r_major * math.radians(lon)
-    scale = x/lon
-    y = 180.0/math.pi * math.log(math.tan(math.pi/4.0 + lat * (math.pi/180.0)/2.0)) * scale
+    scale = x / lon
+    y = 180.0 / math.pi * math.log(math.tan(math.pi / 4.0 + lat * (math.pi / 180.0) / 2.0)) * scale
     return (x, y)
 
+
 import pandas as pd
+import xyzservices.providers as xyz  # type: ignore[import-untyped] #  tile providers
+
+# todo might need to lru_cache so reloading works
+from bokeh.models import ColumnDataSource as CDS
+from bokeh.models import Range
+from bokeh.plotting import figure
 
 from .data import locations_dataframe
 
-# todo might need to lru_cache so reloading works
 
-from bokeh.models import ColumnDataSource as CDS, Range
-from bokeh.plotting import figure, show
-
-import xyzservices.providers as xyz  # type: ignore[import-untyped] #  tile providers
-
-def plot(day: str, df):
-#    from bokeh.io import output_notebook
-#     output_notebook()
+def plot(day: str, df):  # noqa: ARG001
+    #    from bokeh.io import output_notebook
+    #     output_notebook()
     # mx = []
     # my = []
     # for lat, lon in zip(df['lat'], df['lon']):
@@ -76,18 +76,16 @@ def plot(day: str, df):
 
     # I guess mimicking the same interface as google maps is ok? e.g. sidebar with points and time on the left and highlight them (maybe with different colors depending on whether they are in the future or in the past)
 
-    #save to html file
+    # save to html file
     # output_file("file.html")
     # save(plot)
 
     return p
 
 
-
-
 # set limit to finite value to speed up
-def plot_all(limit=None):
-    from bokeh.io import export_png, export_svgs, save
+def plot_all(limit=None):  # noqa: ARG001
+    from bokeh.io import export_png, export_svgs
     # todo add min/max date?
     # todo multiple threads?
 
@@ -98,11 +96,16 @@ def plot_all(limit=None):
         df = locations_dataframe()
     else:
         # todo move to hpi or something
-        idf = pd.DataFrame([{
-            'dt': datetime.strptime('20200101', '%Y%m%d') + timedelta(minutes=30 * x),
-            'lat': max((0.01 * x) % 90, 0.1),
-            'lon': max((0.01 * x) % 90, 0.1),
-        } for x in range(1, 1000)])
+        idf = pd.DataFrame(
+            [
+                {
+                    'dt': datetime.strptime('20200101', '%Y%m%d') + timedelta(minutes=30 * x),
+                    'lat': max((0.01 * x) % 90, 0.1),
+                    'lon': max((0.01 * x) % 90, 0.1),
+                }
+                for x in range(1, 1000)
+            ]
+        )
         df = idf.set_index('dt')
 
     # todo make defensive, collect errors
@@ -121,7 +124,7 @@ def plot_all(limit=None):
 
         print(f'saving {fname}')
         if True:
-            export_png (p, filename=fname)
+            export_png(p, filename=fname)
         else:
             # hmm, this doesn't produce the background (map). but faster to dump?
             p.output_backend = 'svg'
@@ -132,7 +135,6 @@ def plot_all(limit=None):
     # todo ugh. pretty sure it's resulting in race conditions... (probably because of shared chromedriver?) need to test it properly
     from concurrent.futures import ThreadPoolExecutor as Pool
     # todo and process pool executor just gets stuck?
-
 
     parallel = False
 

@@ -1,6 +1,6 @@
-from . import nicename
-
 from pathlib import Path
+
+from . import nicename
 
 
 def save_plot(plot, name: str):
@@ -10,11 +10,13 @@ def save_plot(plot, name: str):
     suf = path.suffix
     if suf == '.html':
         from bokeh.io import output_file, save
+
         output_file(str(path), title='hello', mode='inline', root_dir=None)
         save(plot)
     elif suf == '.png':
         # todo sigh.. seems that png export is way too slow
         from bokeh.io import export_png
+
         export_png(plot, filename=str(path))
     else:
         raise RuntimeError(name, suf)
@@ -22,7 +24,9 @@ def save_plot(plot, name: str):
 
 def make_test(plot_factory):
     name = nicename(plot_factory.__name__)
+
     def test() -> None:
         p = plot_factory()
         save_plot(p, name=f'{name}.html')
+
     return test
