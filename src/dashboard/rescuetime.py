@@ -1,10 +1,10 @@
 from datetime import timedelta
 
-from bokeh.models import ColumnDataSource as CDS
 from bokeh.layouts import column
+from bokeh.models import ColumnDataSource as CDS
 
-from .core.bokeh import set_hhmm_axis, date_figure
 from .core import tab
+from .core.bokeh import date_figure, set_hhmm_axis
 from .misc import add_daysoff
 
 
@@ -17,22 +17,22 @@ def _plot_rescuetime(df):
     # todo hmm, max might be greater than 3600? I wonder if this is because of hour boundaries
 
     def aux(df):
+        # fmt: off
         df['date']   = df['dt'].dt.floor('D')
         df['left'  ] = df['date'] - timedelta(days=0.5) # make it centered at the day boundary
         df['right' ] = df['left'] + timedelta(days=1)
         df['bottom'] = df['dt'].apply(mins) # TODO use time type here instead??
-
+        # fmt: on
 
     # right, so it seem it's aggregating at 5 minute boundaries? so if we don't do this, rects will overlap on the plot
     dfi = df.groupby('dt').sum().reset_index()
     aux(dfi)
-    dfi['top'  ] = dfi['bottom'] + dfi['duration_s'] / 60
+    dfi['top'] = dfi['bottom'] + dfi['duration_s'] / 60
     dfi['alpha'] = 1.0
-
 
     dfh = df.set_index('dt').resample('1h').sum().reset_index()
     aux(dfh)
-    dfh['top'  ] = dfh['bottom'] + 60
+    dfh['top'] = dfh['bottom'] + 60
     dfh['alpha'] = dfh['duration_s'] / 3600.0
 
     # ok, seems that rectangles are the best choice judging by this https://docs.bokeh.org/en/latest/docs/user_guide/categorical.html#heatmaps
@@ -44,7 +44,6 @@ def _plot_rescuetime(df):
         set_hhmm_axis(p.yaxis, mint=0, maxt=top, period=60)
         add_daysoff(p)
 
-
     pi = date_figure()
     plot(pi, dfi)
 
@@ -53,12 +52,10 @@ def _plot_rescuetime(df):
 
     # todo hmm, I guess they have to be connected to the same datasource?
     from .core.bokeh import date_slider
-    return column([
-        date_slider(pi, date_column='date'),
-        pi,
-        date_slider(ph, date_column='date'),
-        ph
-    ])
+
+    return column([date_slider(pi, date_column='date'), pi, date_slider(ph, date_column='date'), ph])
+
+
 # TODO omit errors from tooltips if they aren't presetn
 # TODO days off-add some sort of overlay to only show weekdays or only show weekends that would cover the plot completely
 # so it's possible to switch and compare visually
@@ -70,17 +67,21 @@ def _plot_rescuetime(df):
 # mapper = LinearColorMapper(palette=colors, low=0, high=3600)
 # transform('duration_s', mapper))
 
+
 @tab
 def plot_rescuetime():
     from .data import rescuetime_dataframe as DF
+
     return _plot_rescuetime(DF())
 
 
 def plot_rescuetime_fake():
     from .data import fake_rescuetime
+
     with fake_rescuetime(rows=100000):
         return plot_rescuetime()
 
 
 from .core.tests import make_test
+
 test_rescuetime = make_test(plot_rescuetime_fake)

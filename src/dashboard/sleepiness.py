@@ -1,20 +1,21 @@
 '''
 Subjectiveness sleepiness, felt during the day
 '''
+
 from datetime import timedelta
 
+import pandas as pd
 from bokeh.layouts import column
 from bokeh.models import CustomJSTickFormatter
 
-import pandas as pd
-
-from .core.bokeh import scatter_matrix, rolling, hhmm_formatter
-from .core.pandas import unlocalize, lag_df
 from .core import tab
+from .core.bokeh import hhmm_formatter, rolling
+from .core.pandas import lag_df, unlocalize
 
 
 def _sleepy_df():
     from .data import sleepiness_dataframe as SDF
+
     s = SDF()
     s = s[s['error'].isna()]
     # todo: need to be careful about nans in index?
@@ -36,7 +37,7 @@ def plot_sleepiness_vs_exercise():
     # todo for error handling, would be nice to have unused variable detection?
 
     s = _sleepy_df()
-    c = c[c.index >= min(s.index)] # clip till the time we started collecting it
+    c = c[c.index >= min(s.index)]  # clip till the time we started collecting it
 
     deltas = [timedelta(hours=h) for h in range(-200, 200)]
     # we want to find out what predicts sleepiness..
@@ -52,6 +53,7 @@ def plot_sleepiness_vs_exercise():
 @tab
 def plot_sleepiness_vs_sleep():
     from .data import sleep_dataframe as DF
+
     sdf = DF()
 
     sdf = sdf[sdf['error'].isna()]

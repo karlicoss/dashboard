@@ -1,26 +1,25 @@
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Optional
-
-from .tabs import tabs, Tab
-from .settings import theme
-
 
 from .core.common import logger
-
+from .settings import theme
+from .tabs import Tab, tabs
 
 # I guess it kinda makes sense to dump each tab separately
+
 
 def render_tab(*, tab: Tab, filename: Path):
     res = tab.plotter()
 
-    from bokeh.io import save, output_file, curdoc
+    from bokeh.io import curdoc, output_file, save
+
     output_file(filename, title=tab.name, mode='inline', root_dir=None)
     curdoc().theme = theme
     # TODO a bit weird that it needs two function calls to save..
     save(res)
 
 
-def run(to: Path, tab_name: Optional[str]=None, debug: bool=False) -> Iterable[Exception]:
+def run(to: Path, tab_name: str | None = None, *, debug: bool = False) -> Iterable[Exception]:
     for tab in tabs():
         if isinstance(tab, Exception):
             # todo collect errors in a separate tab? or just 'dashboard.html'?
@@ -38,19 +37,22 @@ def run(to: Path, tab_name: Optional[str]=None, debug: bool=False) -> Iterable[E
         try:
             if debug:
                 # todo optional dependency?
-                from ipdb import launch_ipdb_on_exception # type: ignore[import-not-found]
+                from ipdb import launch_ipdb_on_exception  # type: ignore[import-not-found]
+
                 ctx = launch_ipdb_on_exception
             else:
                 from contextlib import nullcontext
+
                 ctx = nullcontext
             with ctx():
-                res = render_tab(tab=tab, filename=fname)
+                _res = render_tab(tab=tab, filename=fname)
         except Exception as e:
             # TODO make it defensive? if there were any errors, backup old file, don't overwrite? dunno.
             logger.exception(e)
 
             import html
             import traceback
+
             tb = '</br>'.join(html.escape(l) for l in traceback.format_exception(Exception, e, e.__traceback__))
             fname.write_text(tb)
 
@@ -58,9 +60,9 @@ def run(to: Path, tab_name: Optional[str]=None, debug: bool=False) -> Iterable[E
             continue
 
 
-
 def main() -> None:
     from argparse import ArgumentParser as P
+
     p = P()
     p.add_argument('--to', type=Path, required=True)
     p.add_argument('--tab', type=str, help='Plot specific tab (by default plots all)')
@@ -74,6 +76,7 @@ def main() -> None:
         for e in errors:
             logger.exception(e)
         import sys
+
         sys.exit(1)
 
 
