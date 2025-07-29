@@ -407,7 +407,7 @@ def rolling(
         # [GlyphRenderer(id='399d53f5-73e9-44d9-9527-544b761c7705', ...)]
 
     if len(dfw) > 0:
-        plot.circle(source=CDS(dfw), x=x, y=y, legend_label='warnings', size=20, color='yellow')
+        plot.scatter(source=CDS(dfw), x=x, y=y, legend_label='warnings', size=20, color='yellow')
 
     # todo warn if unsorted?
     df = df.sort_index()
@@ -520,13 +520,13 @@ def figure(df=None, **kwargs) -> figureT:
         # TODO not sure I like this, it's a bit spammy
         mode='vline',
     )
-    from bokeh.plotting import figure as F
+    from bokeh.plotting import figure as bokeh_figure
 
     # TODO this kinda expands it to fullscreen
     # ugh would be nice to automatically expand to fullscreen?
     kw: dict[str, Any] = {'width': 2000}
     kw.update(**kwargs)
-    f = F(**kw)
+    f = bokeh_figure(**kw)
     # ugh. would be nice if add_tools returned self..
     f.add_tools(hover)
     return f
@@ -687,7 +687,7 @@ def plot_multiple(df, *, columns, **kwargs):  # noqa: ARG001
                     **extras,  # type: ignore[arg-type]
                 )
 
-        assert p.title is None, p.title
+        # NOTE: seems like bokeh sets the default title for the plot? so p.title may not be none
         p.title = str(grp)
         if x_range is None:
             x_range = p.x_range

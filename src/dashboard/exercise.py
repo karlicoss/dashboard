@@ -64,7 +64,6 @@ def _plot_manual_exercise(df):
             p.add_layout(LinearAxis(y_range_name='volume'), 'right')
             p.scatter(x='dt', y='volume', source=CDS(edf), legend_label='volume', color='black', size=2, y_range_name='volume')
 
-        assert p.title is None, p.title
         p.title = k
 
         # TODO need to assert it's a Range1D? not sure
@@ -88,7 +87,6 @@ def _plot_strength_volume(df) -> RollingResult:
     # TODO color different points as exercise kinds?
     r = rolling(x='dt', y='volume', df=df, avgs=['30D'])
     f = r.figure
-    assert f.title is None, f.title
     f.title = 'Strength exercise volume'
     return r
 

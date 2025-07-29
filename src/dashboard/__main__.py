@@ -47,6 +47,7 @@ def run(to: Path, tab_name: str | None = None, *, debug: bool = False) -> Iterab
             with ctx():
                 _res = render_tab(tab=tab, filename=fname)
         except Exception as e:
+            e.add_note(f'while processing {tab.name}')
             # TODO make it defensive? if there were any errors, backup old file, don't overwrite? dunno.
             logger.exception(e)
 
