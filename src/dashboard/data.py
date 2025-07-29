@@ -51,12 +51,19 @@ def sleep_dataframe():
 
 @df_cache
 def sleepiness_dataframe():
+    import pandas as pd
     import my.body.sleep.sleepiness as S  # ty: ignore[unresolved-import]
 
     df = S.dataframe()
     # TODO not sure if should do it here?
     # TODO stick nans closer to the original positions?
-    df = df.set_index('dt').sort_index()
+    df = df.set_index('dt')
+
+    # TODO ugh. need to use this key because there is a mixture of dates/datetimes here...
+    # dunno maybe best to
+    # - set expectation what type are we expecting to use (date/datetime/aware datetime)
+    # - convert to desired type and handle errors (e.g. drop/convert and attach error etc)
+    df = df.sort_index(key=lambda x: pd.to_datetime(x, utc=True))
     return df
 
 
