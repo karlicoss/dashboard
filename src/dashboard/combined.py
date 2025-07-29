@@ -24,6 +24,9 @@ class CS:
 
 # FIXME error handling
 def _plot_sleep_vs_exercise(edf):
+    # FIXME ugh. shitty way to filter out dates, but not datetimes or nones
+    edf = edf[edf['dt'].apply(lambda s: not (len("None") < len(str(s)) < 12))]
+
     # TODO compute some automatic holiday/weekend correlation
     # maybe, e.g. 'days off within the last 5 days'? or some sort of discounting?
     from .data import sleep_dataframe as SDF

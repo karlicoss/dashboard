@@ -77,6 +77,9 @@ def _plot_manual_exercise(df):
 
 
 def _plot_strength_volume(df) -> RollingResult:
+    # FIXME ugh. shitty way to filter out dates, but not datetimes or nones
+    df = df[df['dt'].apply(lambda s: not (len("None") < len(str(s)) < 12))]
+
     df['dt'] = unlocalize(df['dt'])
     df = df.set_index('dt')
 
