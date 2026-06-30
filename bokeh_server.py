@@ -57,9 +57,9 @@ def bokeh_main_2():
     sys.path.insert(0, str(src))
 
     import holoviews as hv
-    from bokeh.layouts import layout  # type: ignore
-    from bokeh.models.widgets import Panel, Tabs  # type: ignore
-    from bokeh.plotting import figure  # type: ignore
+    from bokeh.layouts import layout
+    from bokeh.models.widgets import Panel, Tabs
+    from bokeh.plotting import figure
 
     from dashboard.core.bokeh import test_scatter_matrix
 
@@ -73,7 +73,7 @@ def bokeh_main_2():
     # although pehaps it's easier to just always keep logs open?
     from datetime import date
 
-    from bokeh.models.widgets import DateRangeSlider  # type: ignore
+    from bokeh.models.widgets import DateRangeSlider
 
     from dashboard.data import sleep_dataframe  # noqa: F401
     from dashboard.sleep import plot_sleep  # noqa: F401
@@ -89,7 +89,7 @@ def bokeh_main_2():
     def update(attr, old, new):
         print(attr, old, new)
 
-    from bokeh.models import CustomJS  # type: ignore
+    from bokeh.models import CustomJS
 
     # todo see https://docs.bokeh.org/en/latest/docs/gallery/slider.html
     update_js = CustomJS(

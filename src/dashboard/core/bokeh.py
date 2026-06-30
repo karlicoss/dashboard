@@ -1,7 +1,7 @@
 import html
 import logging
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 from itertools import chain, cycle
 from typing import Any, Literal
@@ -11,7 +11,10 @@ import pandas as pd
 from bokeh.layouts import column, gridplot
 from bokeh.models import ColumnDataSource as CDS
 from bokeh.models.renderers import GlyphRenderer
+from bokeh.models.ui import UIElement
 from pandas.api.types import is_numeric_dtype
+
+logger = logging.getLogger(__name__)
 
 
 # TODO FIXME also handle errors?
@@ -227,7 +230,14 @@ Avg = str | int | None
 
 # todo better name? also have similar function for plotly
 def rolling(
-    *, x: str, y: str, df, avgs: Sequence[Avg] = ['7D', '30D'], legend_label=None, context: RollingResult | None = None, **kwargs
+    *,
+    x: str,
+    y: str,
+    df,
+    avgs: Sequence[Avg] = ['7D', '30D'],
+    legend_label=None,
+    context: RollingResult | None = None,
+    **kwargs,
 ) -> RollingResult:
     # TODO maybe use a special logging handler, so everything logged with warning level gets displayed?
     errors = []
@@ -249,7 +259,7 @@ def rolling(
     # meh... don't think I like it
     # TODO def test this
     if context is None:
-        ls = []
+        ls: list[UIElement] = []
         plot = date_figure(df=df)
         ls.append(plot)
 
@@ -380,9 +390,10 @@ def rolling(
                 tc = TableColumn(
                     field=c,
                     title=c,
-                    **({} if formatter is None else {'formatter': formatter}),  # type: ignore[arg-type]
                     width=width * one_char,
                 )
+                if formatter is not None:
+                    tc.formatter = formatter
                 yield tc
 
         # TODO hmm, if we reuse the data source, editing & selection might work?
@@ -425,7 +436,7 @@ def rolling(
         avgs = ['3D' for _ in avgs]
         # FIXME need to add this to errors as well, or at least title..
         # TODO need to add a better placholder, timestamp 0 really messes things up
-        warnings.warn(f'No data points for {df}, empty plot!')
+        warnings.warn(f'No data points for {df}, empty plot!', stacklevel=2)
 
     if None not in avgs:
         ps: GlyphRenderer = plot.scatter(x=x, y=y, source=CDS(df), legend_label=legend_label, **kwargs)
@@ -437,7 +448,7 @@ def rolling(
     for period in [a for a in avgs if a is not None]:
         dfy = df[[y]]
         if str(dfy.index.dtype) == 'object':
-            logging.error(f"{dfy.dtypes}: index type is 'object'. You're likely doing something wrong")
+            logger.error(f"{dfy.dtypes}: index type is 'object'. You're likely doing something wrong")
         if 'datetime64' in str(dfy.index.dtype):
             # you're probably doing something wrong otherwise..
             # todo warn too?
@@ -452,7 +463,9 @@ def rolling(
         # somehow plot.line works if 'x' is index? but df[x] doesnt..
 
         # todo different style by default? thicker line? not sure..
-        pl: GlyphRenderer = plot.line(x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs)
+        pl: GlyphRenderer = plot.line(
+            x=x, y=y, source=CDS(dfa), legend_label=f'{legend_label} ({period} avg)', **kwargs
+        )
         plots.append(pl)
 
     plot.title.text = f'x: {x}, y: {y}'
@@ -480,7 +493,7 @@ def figure(df=None, **kwargs) -> figureT:
         dtypes = df.reset_index().dtypes.to_dict()
 
     tooltips = []
-    formatters = {}
+    formatters: dict[str, Literal['numeral', 'datetime', 'printf'] | CustomJSHover] = {}
     for c, t in dtypes.items():
         fmt: Literal['numeral', 'datetime', 'printf'] | CustomJSHover | None = None
         tfmt = '@' + c
@@ -489,7 +502,7 @@ def figure(df=None, **kwargs) -> figureT:
         else:
             # this is more reliable, works if there is a mix of timestamps..
             s = df.reset_index()[c].dropna()
-            dateish = len(s) > 0 and s.apply(lambda x: isinstance(x, (pd.Timestamp, datetime))).all()  # noqa: UP038
+            dateish = len(s) > 0 and s.apply(lambda x: isinstance(x, (pd.Timestamp, datetime))).all()
         # TODO add to tests?
         if dateish:
             fmt = 'datetime'
@@ -661,16 +674,20 @@ def plot_multiple(df, *, columns, **kwargs):  # noqa: ARG001
             # TODO if no color, just vary color + ???
             for rh in rhs:
                 # right. annotation works, but wasn't sure how to make it toggable
-                # from bokeh.models import BoxAnnotation # type: ignore
+                # from bokeh.models import BoxAnnotation
                 # normal = BoxAnnotation(bottom=rh.low, top=rh.high, fill_alpha=0.1, fill_color=rh.color)
                 # p.add_layout(normal)
 
-                extras: Mapping[str, str | None] = {'color': None}
+                extras: dict[str, Any] = {}
                 col = rh.color
                 if col is None:
                     col = color
                     if len(rhs) > 1:
-                        logging.warning("Multiple ranges for %s don't have colour, this will result in ranges overlapping: %s", f, rhs)
+                        logger.warning(
+                            "Multiple ranges for %s don't have colour, this will result in ranges overlapping: %s",
+                            f,
+                            rhs,
+                        )
                         # at least make the separators visible
                         extras = {'color': 'black', 'line_dash': 'dotted'}
 
@@ -684,7 +701,7 @@ def plot_multiple(df, *, columns, **kwargs):  # noqa: ARG001
                     fill_color=col,
                     fill_alpha=0.1,
                     legend_label=f'{f} ranges',
-                    **extras,  # type: ignore[arg-type]
+                    **extras,
                 )
 
         # NOTE: seems like bokeh sets the default title for the plot? so p.title may not be none
@@ -715,8 +732,10 @@ def set_hhmm_axis(axis, *, mint: int, maxt: int, period: int = 30) -> None:
 def hhmm_formatter(unit):
     if unit is int:
         xx = 'var mins = tick'
-    elif str(unit) == 'timedelta64[ns]':
-        xx = 'var mins = Math.floor(tick / 10 ** 3 / 60)'  # eh why 10^3 works if it's nanos??
+    elif str(unit).startswith('timedelta64['):
+        # Bokeh serializes timedelta64 values to milliseconds on the JS side,
+        # regardless of the original numpy/pandas timedelta64 unit.
+        xx = 'var mins = Math.floor(tick / 10 ** 3 / 60)'
     else:
         raise RuntimeError(f'Unhandled: {unit}')
 

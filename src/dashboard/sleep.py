@@ -30,7 +30,7 @@ def _plot_sleep(df):
 
     # todo naming: plot vs figure vs graph?
     r = rolling(x='date', y='avg_hr', df=df, color='blue', legend_label='HR')
-    [g, g7, g30] = r
+    [_g, g7, g30] = r
     g7.glyph.line_width = 2
     g30.glyph.line_color = 'lightblue'
     g30.glyph.line_width = 2
@@ -64,7 +64,7 @@ def plot_sleep_hrv(df):
 
     # TODO some hrv evening points are right at zero? careful, maybe worth filtering..
     rm = rolling(df=df, x='date', y='hrv_morning', color='green')
-    [g, g7, g30] = rm
+    [_g, g7, g30] = rm
     g7.glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
 
@@ -124,7 +124,9 @@ def plot_sleep_intervals(df):
     # TODO need to handle nans/errors?
 
     # TODO not convinced 'date' quite works here...
-    p.vbar(source=CDS(ints), x='date', width=timedelta(1), bottom='sleep_start', top='sleep_end', color='black', alpha=0.1)
+    p.vbar(
+        source=CDS(ints), x='date', width=timedelta(1), bottom='sleep_start', top='sleep_end', color='black', alpha=0.1
+    )
 
     from .core.bokeh import set_hhmm_axis
 
@@ -139,7 +141,7 @@ def plot_sleep_bedtime(df):
     df = _sleep_df(df)
 
     r = rolling(df=df, x='date', y='bed_time', color='green')
-    [g, g7, g30] = r
+    [_g, g7, g30] = r
     g7.glyph.line_dash = 'dashed'
     g30.glyph.line_width = 2
     add_daysoff(r.figure)

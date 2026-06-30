@@ -4,6 +4,8 @@ from collections.abc import Sequence
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
+logger = logging.getLogger(__name__)
+
 Column = str
 
 
@@ -35,14 +37,14 @@ def read_group_hints(df):
         for f in gr:
             if f not in cols:
                 # TODO this should be displayed separately as 'errors'
-                logging.warning('Unexpected column: %s', f)
+                logger.warning('Unexpected column: %s', f)
             else:
                 cols.remove(f)
                 gg.append(f)
         groups.append(gg)
 
     if len(cols) == 0:
-        logging.warning('Unexpected columns: %s', cols)
+        logger.warning('Unexpected columns: %s', cols)
         groups.append(cols)
 
     return groups
@@ -129,6 +131,11 @@ def resample_sum(df: pd.DataFrame, *, period) -> pd.DataFrame:
     ds = df.resample(period)
     res = ds.aggregate(func=agg)
     assert isinstance(res, pd.DataFrame), res  # make mypy happy
+    for col in df.columns:
+        if not is_numeric_dtype(df[col].dtype):
+            # Keep empty non-numeric buckets represented as None.
+            # Without this pandas can preserve them as NaN after aggregation.
+            res[col] = res[col].astype(object).where(pd.notna(res[col]), None)
     return res
 
 
@@ -139,8 +146,8 @@ def test_resample_sum():
         {'y': 2   , 's': None},
         {'y': None, 's': 'd' },
         {'y': None, 's': None},
-    ], index=pd.date_range('2000/01/01', periods=5, freq='T'))  # fmt: skip
-    df = resample_sum(df, period='2T')
+    ], index=pd.date_range('2000/01/01', periods=5, freq='min'))  # fmt: skip
+    df = resample_sum(df, period='2min')
     # TODO not sure if the last should be 0 or None..
     assert list(df['y']) == [5, 2, 0]
     assert list(df['s']) == ['a; c', 'd', None]

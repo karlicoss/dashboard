@@ -37,9 +37,10 @@ def run(to: Path, tab_name: str | None = None, *, debug: bool = False) -> Iterab
         try:
             if debug:
                 # todo optional dependency?
-                from ipdb import launch_ipdb_on_exception  # type: ignore[import-not-found]
+                # dynamic import makes type checkers happy here
+                from importlib import import_module
 
-                ctx = launch_ipdb_on_exception
+                ctx = import_module('ipdb').launch_ipdb_on_exception
             else:
                 from contextlib import nullcontext
 

@@ -49,7 +49,7 @@ SETTINGS: dict[str, Any] = {
 def test_rolling(df):
     df.index = df.index.rename('x')  # meh. by default index doesn't have name..
     r = rolling(x='x', y='value', df=df, avgs=[2, 5], legend_label='test')
-    [g, g2, g5] = r
+    [_g, _g2, _g5] = r
     # todo need different numbers for each test
     save_plot(r.layout, 'test_rolling.html')
 
@@ -109,7 +109,7 @@ def test_rolling_errors(df):
     df = df.set_index('dt')
 
     r = rolling(x='dt', y='value', df=df)
-    [g, g7, g30] = r
+    [_g, _g7, _g30] = r
     # todo saving takes a while.. maybe make it configurable?
     save_plot(r.layout, name=f'rolling_errors_{_count}.html')
 
