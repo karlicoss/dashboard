@@ -1,10 +1,12 @@
+import logging
 from datetime import timedelta
 
-import numpy as np
 import pandas as pd
 from bokeh.models import ColumnDataSource as CDS
 
 from .core.bokeh import guess_range
+
+logger = logging.getLogger(__name__)
 
 
 # NOTE: vbar is _centered_ at the corresponding x
@@ -25,7 +27,7 @@ def add_daysoff(plot, *, dates=None, bottom=None, top=None):
 
     # todo need to keep boundary (-0.5, 0.5)? .. or it's automatic??
     # # FIXME why is it unused?
-    _days = list(np.arange(mind, maxd, day))
+    # _days = list(np.arange(mind, maxd, day))
     # TODO make a dataframe with it??
 
     days_2 = pd.date_range(start=mind, end=maxd, freq='D')
@@ -35,9 +37,7 @@ def add_daysoff(plot, *, dates=None, bottom=None, top=None):
     try:
         import my.calendar.holidays as holidays
     except Exception as e:
-        import logging
-
-        logging.exception(e)
+        logger.exception(e)
         return None
 
     col_df = pd.DataFrame(index=days_2, columns=['color'])

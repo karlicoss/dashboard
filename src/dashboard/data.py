@@ -51,8 +51,8 @@ def sleep_dataframe():
 
 @df_cache
 def sleepiness_dataframe():
-    import pandas as pd
     import my.body.sleep.sleepiness as S  # ty: ignore[unresolved-import]
+    import pandas as pd
 
     df = S.dataframe()
     # TODO not sure if should do it here?
@@ -129,7 +129,7 @@ def hack_config(name: str, **kwargs):
     # todo ugh. annoying that we need this boilerplate..
     # otherwise it would fail when the module is imported
     # todo document that in the github issue?
-    from my.cfg import config  # type: ignore[attr-defined]
+    from my.cfg import config  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]
 
     class user_config:
         pass
@@ -185,7 +185,7 @@ def fake_emfit(*args, **kwargs):
         class emfit:
             export_path = ()
             timezone = pytz.timezone('Europe/London')
-            excluded_sids = []
+            excluded_sids = ()
 
     with tmp_config(modules='my.emfit', config=config):
         import my.emfit as M

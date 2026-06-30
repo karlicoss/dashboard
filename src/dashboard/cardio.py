@@ -132,7 +132,7 @@ def _plot_cardio_volume(df) -> RollingResult:
     df = resample_sum(df, period='D')
 
     r = rolling(df=df, x='start_time', y='volume', avgs=['7D', '30D'])
-    [g, g7, g30] = r
+    [_g, g7, g30] = r
     g7.glyph.line_dash = 'dashed'
     g7.visible = False
     g30.glyph.line_width = 2

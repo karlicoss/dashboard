@@ -8,6 +8,7 @@ from typing import Any
 import numpy as np
 from bokeh.layouts import column
 from bokeh.models import ColumnDataSource as CDS
+from bokeh.models.ui import UIElement
 from bokeh.palettes import Category20 as palletes
 
 from .core import tab
@@ -62,18 +63,22 @@ def _plot_manual_exercise(df):
             p.extra_y_ranges = {'volume': Range1d(start=0.0, end=maxy)}
             # add the second axis to the plot.
             p.add_layout(LinearAxis(y_range_name='volume'), 'right')
-            p.scatter(x='dt', y='volume', source=CDS(edf), legend_label='volume', color='black', size=2, y_range_name='volume')
+            p.scatter(
+                x='dt', y='volume', source=CDS(edf), legend_label='volume', color='black', size=2, y_range_name='volume'
+            )
 
         p.title = k
 
         # TODO need to assert it's a Range1D? not sure
-        p.y_range.start = 0  # type: ignore[attr-defined]
+        assert isinstance(p.y_range, Range1d), p.y_range
+        p.y_range.start = 0
 
         if x_range is None:
             x_range = p.x_range
         plots.append(p)
         # TODO not sure if I want sliding averages?
-    return column(plots)
+    ui_plots: list[UIElement] = list(plots)
+    return column(ui_plots)
 
 
 def _plot_strength_volume(df) -> RollingResult:

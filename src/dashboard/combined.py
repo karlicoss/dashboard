@@ -3,6 +3,7 @@ Correlations, etc., combined from multiple data sources (haven't come up with a 
 '''
 
 from datetime import timedelta
+from itertools import pairwise
 
 import pandas as pd
 
@@ -41,8 +42,6 @@ def _plot_sleep_vs_exercise(edf):
     def exercise_within(fr, to):
         return edf[edf[CE.dt].between(fr, to)]
 
-    from more_itertools import windowed
-
     # TODO maybe use some namedtuply thing for column names?...
     has_date = sdf[CS.sleep_start].notna() & sdf[CS.sleep_end].notna()
     sdf = sdf[has_date]
@@ -62,7 +61,7 @@ def _plot_sleep_vs_exercise(edf):
 
     # todo drop emfit, handle coverage??
     # assert wit is not None # make mypy happy
-    for [(i1, row1), (i2, row2)] in windowed(sdf.iterrows(), 2):  # type: ignore[misc]  # noqa: B007
+    for (i1, row1), (i2, row2) in pairwise(sdf.iterrows()):  # noqa: B007
         # TODO check no exercise overlaps?
         # todo error handling
         to = row2[CS.sleep_start]
